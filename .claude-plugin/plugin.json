@@ -1,0 +1,9 @@
+{
+  "name": "ilano",
+  "version": "0.1.0",
+  "description": "Original agent skills by Ryan Ilano — copyable-markdown and prompt-pack.",
+  "author": {
+    "name": "Ryan Ilano"
+  },
+  "license": "MIT"
+}
