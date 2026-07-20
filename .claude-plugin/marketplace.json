@@ -1,0 +1,14 @@
+{
+  "name": "ilano-skills",
+  "owner": {
+    "name": "Ryan Ilano"
+  },
+  "description": "Agent skills by Ryan Ilano, built on the open Agent Skills standard.",
+  "plugins": [
+    {
+      "name": "ilano",
+      "source": "./",
+      "description": "Original agent skills by Ryan Ilano — copyable-markdown and prompt-pack."
+    }
+  ]
+}
