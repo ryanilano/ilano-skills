@@ -5,15 +5,16 @@
 ## Test Framework
 
 **Runner:**
-- None (no Jest, Vitest, Bats, shunit2, or similar). This repository contains Markdown skills, YAML manifests, and Bash scripts — there is no unit-test harness.
-- Quality is enforced through **validation scripts**, not tests.
+- Plain bash: `scripts/test.sh` (added 2026-07-21) — no Jest/Vitest/Bats dependency. Builds disposable fixture repos under `mktemp` and asserts exit codes + stderr patterns for `validate.sh` and `diff-upstream.sh`, fully offline (vendored checks use a local `file://` upstream with `uploadpack.allowAnySHA1InWant`).
+- Quality is otherwise enforced through **validation scripts**.
 
 **Assertion Library:**
-- Not applicable
+- None — hand-rolled `check_validate` / `check_diff_upstream` helpers in `scripts/test.sh`
 
 **Run Commands:**
 ```bash
-scripts/validate.sh                          # Validate provenance for every skill (the pre-commit gate)
+scripts/test.sh                              # Test suite for the validation scripts (runs in CI)
+scripts/validate.sh                          # Validate structure + provenance for every skill (the pre-commit gate)
 scripts/diff-upstream.sh <skill>             # Diff a vendored/forked skill against its pinned upstream SHA
 scripts/diff-upstream.sh <skill> --latest    # Diff against upstream's default branch instead
 ```
@@ -34,7 +35,7 @@ scripts/diff-upstream.sh <skill> --latest    # Diff against upstream's default b
 ## Test File Organization
 
 **Location:**
-- No test files exist (`find . -name "*.test.*" -o -name "*.spec.*"` returns nothing)
+- `scripts/test.sh` — the test suite for the validation scripts
 - Validation logic lives in `scripts/`
 
 **Naming:**
@@ -43,8 +44,9 @@ scripts/diff-upstream.sh <skill> --latest    # Diff against upstream's default b
 **Structure:**
 ```
 scripts/
-├── validate.sh        # Provenance validator — run before every commit
-└── diff-upstream.sh   # Upstream drift checker for vendored/forked skills
+├── validate.sh        # Structure + provenance validator — run before every commit
+├── diff-upstream.sh   # Upstream drift checker for vendored/forked skills
+└── test.sh            # Fixture-based tests for the two scripts above
 ```
 
 ## Validation Script Structure
@@ -110,8 +112,7 @@ Not applicable — no test data. The skills themselves (`skills/*/PROVENANCE.yam
 **Requirements:** None enforced; no coverage tooling exists or applies.
 
 **What validation does NOT check (gaps):**
-- SKILL.md frontmatter presence or `name`-matches-directory rule (stated in `AGENTS.md`, unenforced)
-- SKILL.md 500-line limit (stated in `AGENTS.md`, unenforced)
+- SKILL.md 500-line limit (stated in `AGENTS.md`, unenforced; presence and `name`-matches-directory are enforced as of 2026-07-21)
 - Script standards (`set -e`, stderr/stdout discipline) — unenforced; no shellcheck
 - JSON manifest validity (`.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`)
 
@@ -125,7 +126,7 @@ Not applicable — no test data. The skills themselves (`skills/*/PROVENANCE.yam
 
 ## CI/CD
 
-No CI pipeline detected (no `.github/workflows/`, no hooks committed). The enforcement mechanism is the `AGENTS.md` instruction: "Run `scripts/validate.sh` before every commit."
+`.github/workflows/validate.yml` (added 2026-07-21) runs `scripts/validate.sh` and `scripts/test.sh` on pushes to `main` and on PRs. Locally, the `AGENTS.md` instruction still applies: "Run `scripts/validate.sh` before every commit."
 
 ## Adding Checks
 

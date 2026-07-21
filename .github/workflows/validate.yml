@@ -11,3 +11,4 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - run: scripts/validate.sh
+      - run: scripts/test.sh

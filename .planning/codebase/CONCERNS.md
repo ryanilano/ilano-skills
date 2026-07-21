@@ -35,12 +35,14 @@
 - Files: `scripts/validate.sh` (lines 52–57), `scripts/diff-upstream.sh` (exit code contract lines 8, exit 2 paths)
 - Trigger: `diff-upstream.sh` distinguishes exit 1 (diff found) from exit 2 (usage/config error), but `validate.sh` calls it with `> /dev/null 2>&1` and treats any non-zero the same, discarding both the exit-code distinction and the stderr explanation
 - Workaround: Run `scripts/diff-upstream.sh <skill>` directly to see the real error. Latent today — no vendored skill exists yet — but it will bite the first time one is added
+- **Addressed 2026-07-21:** `validate.sh` now distinguishes exit 1 (content differs) from other exits, and surfaces the `error:` line from stderr as "upstream check could not run". Covered by `scripts/test.sh`
 
 **`upstream_path` defaulting to repo root:**
 - Symptoms: With `upstream_path` unset, `diff-upstream.sh` diffs the entire upstream repository root against the single skill directory, producing a wall of spurious differences
 - Files: `scripts/diff-upstream.sh` (line 74, `"$tmp/${path:-.}"`)
 - Trigger: Any vendored/fork PROVENANCE.yaml that omits `upstream_path` while the upstream repo contains more than that one skill
 - Workaround: Always set `upstream_path`; consider making it required alongside `upstream_repo`/`upstream_sha` in the line 49 check
+- **Addressed 2026-07-21:** `upstream_path` is now required alongside `upstream_repo`/`upstream_sha`; omitting it is an exit-2 config error. Covered by `scripts/test.sh`
 
 ## Security Considerations
 
@@ -78,6 +80,7 @@
 - Why fragile: Both existing skills are `origin: original`, so the `fork` (LICENSE.upstream + modifications) and `vendored` (upstream diff) branches have never executed against real data. First real fork/vendored skill is where the YAML-parsing and exit-code bugs above will surface
 - Safe modification: When adding the first non-original skill, run `validate.sh` and `diff-upstream.sh <skill>` manually (unredirected) and inspect stderr before trusting the JSON summary
 - Test coverage: None
+- **Mitigated 2026-07-21:** `scripts/test.sh` now exercises fork and vendored branches against synthetic fixtures, including a real (local `file://`) upstream fetch/diff — no longer fully dead code, though still unused by real skills
 
 **copyable-markdown four-backtick fence protocol:**
 - Files: `skills/copyable-markdown/SKILL.md` (Output format section), `skills/copyable-markdown/assets/copyblock-prompt.md`
@@ -119,6 +122,7 @@
 - Files: `scripts/validate.sh`, `scripts/diff-upstream.sh`
 - Risk: Regressions in validation logic pass unnoticed precisely because validation is the safety net; the fork/vendored branches have never run against real data
 - Priority: Medium — small surface, but it is the repo's only automated quality gate. A bats or plain-bash fixture test with a fake `skills/` tree would cover every branch cheaply
+- **Addressed 2026-07-21:** `scripts/test.sh` added — 19 plain-bash fixture tests covering all `validate.sh` branches and `diff-upstream.sh` arg/config handling, offline. Runs in CI via `.github/workflows/validate.yml`
 
 ---
 
