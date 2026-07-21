@@ -1,5 +1,6 @@
 #!/bin/bash
-# Validate provenance rules for every skill under skills/.
+# Validate structure and provenance rules for every skill under skills/.
+#   - every skill has SKILL.md whose frontmatter name matches the directory name
 #   - every skill has PROVENANCE.yaml with a known origin
 #   - origin: fork    -> LICENSE.upstream present, modifications list non-empty
 #   - origin: vendored -> content matches upstream at the pinned SHA
@@ -32,6 +33,15 @@ for dir in "$ROOT"/skills/*/; do
   checked=$((checked + 1))
   prov="$dir/PROVENANCE.yaml"
 
+  if [ ! -f "$dir/SKILL.md" ]; then
+    fail "$skill: missing SKILL.md"
+  else
+    skill_name="$(yaml_get "$dir/SKILL.md" name)"
+    if [ "$skill_name" != "$skill" ]; then
+      fail "$skill: SKILL.md name '$skill_name' does not match directory name"
+    fi
+  fi
+
   if [ ! -f "$prov" ]; then
     fail "$skill: missing PROVENANCE.yaml"
     continue
@@ -51,8 +61,13 @@ for dir in "$ROOT"/skills/*/; do
       ;;
     vendored)
       echo "checking $skill against upstream at pinned SHA..." >&2
-      if ! "$ROOT/scripts/diff-upstream.sh" "$skill" > /dev/null 2>&1; then
+      rc=0
+      diff_err="$("$ROOT/scripts/diff-upstream.sh" "$skill" 2>&1 > /dev/null)" || rc=$?
+      if [ "$rc" -eq 1 ]; then
         fail "$skill: origin is vendored but content differs from upstream at pinned SHA"
+      elif [ "$rc" -ne 0 ]; then
+        errline="$(printf '%s\n' "$diff_err" | grep -m 1 '^error:' || true)"
+        fail "$skill: upstream check could not run (exit $rc): ${errline:-run scripts/diff-upstream.sh $skill for details}"
       fi
       ;;
     "")
