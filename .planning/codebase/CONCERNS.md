@@ -71,6 +71,7 @@
 - Why fragile: AGENTS.md states "SKILL.md required," "`name` must match the directory name," "keep SKILL.md under 500 lines," and "information lives in SKILL.md or `references/`, never both" — none of which validate.sh checks. It validates provenance only. A skill with a missing SKILL.md or mismatched `name` passes validation cleanly
 - Safe modification: Extend the per-skill loop in `validate.sh` with a SKILL.md existence check and a frontmatter `name` == dirname check (both are two-line additions to the existing loop)
 - Test coverage: None — see Test Coverage Gaps
+- **Addressed 2026-07-21 (partial):** SKILL.md existence and `name` == dirname checks added to `validate.sh`. Still unchecked: 500-line cap, SKILL.md/`references/` duplication rule
 
 **Fork and vendored validation paths are dead code today:**
 - Files: `scripts/validate.sh` (lines 44–57)
@@ -90,6 +91,7 @@
 - Current capacity: 2 skills, single author, validation run by hand
 - Limit: AGENTS.md mandates "Run `scripts/validate.sh` before every commit," but no CI (`.github/` absent) or git hook enforces it — the guarantee degrades as skill count or contributor count grows
 - Scaling path: Add a GitHub Actions workflow that runs `scripts/validate.sh` on push/PR (script already exits non-zero on failure and emits JSON, so it is CI-ready as-is)
+- **Addressed 2026-07-21:** `.github/workflows/validate.yml` runs `scripts/validate.sh` on push to main and on PRs
 
 ## Dependencies at Risk
 
@@ -103,10 +105,12 @@
 **No CI pipeline:**
 - Problem: No `.github/workflows/`, no pre-commit hook; provenance and structure rules are enforced only by author memory
 - Blocks: Safe acceptance of external PRs; guaranteed-valid `main` for consumers installing via `npx skills add ryanilano/ilano-skills` or the plugin marketplace
+- **Addressed 2026-07-21:** `.github/workflows/validate.yml` added (validate on push to main / PRs). No pre-commit hook yet
 
 **No SKILL.md structural validation:**
 - Problem: The repo's own SKILL.md format rules (frontmatter shape, name/dirname match, 500-line cap) have no automated check
 - Blocks: Catching a broken skill before it ships to plugin installers
+- **Addressed 2026-07-21 (partial):** existence + name/dirname match now checked by `validate.sh`; 500-line cap still unchecked
 
 ## Test Coverage Gaps
 

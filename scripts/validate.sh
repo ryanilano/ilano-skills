@@ -1,5 +1,6 @@
 #!/bin/bash
-# Validate provenance rules for every skill under skills/.
+# Validate structure and provenance rules for every skill under skills/.
+#   - every skill has SKILL.md whose frontmatter name matches the directory name
 #   - every skill has PROVENANCE.yaml with a known origin
 #   - origin: fork    -> LICENSE.upstream present, modifications list non-empty
 #   - origin: vendored -> content matches upstream at the pinned SHA
@@ -31,6 +32,15 @@ for dir in "$ROOT"/skills/*/; do
   skill="$(basename "$dir")"
   checked=$((checked + 1))
   prov="$dir/PROVENANCE.yaml"
+
+  if [ ! -f "$dir/SKILL.md" ]; then
+    fail "$skill: missing SKILL.md"
+  else
+    skill_name="$(yaml_get "$dir/SKILL.md" name)"
+    if [ "$skill_name" != "$skill" ]; then
+      fail "$skill: SKILL.md name '$skill_name' does not match directory name"
+    fi
+  fi
 
   if [ ! -f "$prov" ]; then
     fail "$skill: missing PROVENANCE.yaml"
