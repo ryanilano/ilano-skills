@@ -64,6 +64,20 @@ for dir in "$ROOT"/skills/*/; do
   esac
 done
 
+# Secrets and personal identifiers must never reach a public repo. Provenance
+# checks cannot catch these, and the likeliest source is a copy-paste from a
+# private script that hardcodes an account.
+echo "scanning skills/ for identifiers and secrets..." >&2
+leak_patterns='ilano\.fyi|ryanilano|@gmail\.com|/Users/[a-z]|sk-ant-|Bearer [A-Za-z0-9_-]{20}'
+if [ -d "$ROOT/skills" ]; then
+  if leaks="$(grep -rInE "$leak_patterns" "$ROOT/skills" 2>/dev/null)"; then
+    # Report file and line only. Never echo the matched text.
+    while IFS= read -r line; do
+      [ -n "$line" ] && fail "identifier or secret pattern at ${line%%:*}:$(printf '%s' "$line" | cut -d: -f2)"
+    done <<< "$leaks"
+  fi
+fi
+
 if [ "$failures" -gt 0 ]; then
   printf '{"ok": false, "skills_checked": %d, "failures": %d}\n' "$checked" "$failures"
   exit 1
