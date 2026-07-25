@@ -8,7 +8,7 @@
     {
       "name": "ilano",
       "source": "./",
-      "description": "Original agent skills by Ryan Ilano — copyable-markdown and prompt-pack."
+      "description": "Original agent skills by Ryan Ilano: copyable-markdown, prompt-pack, and headroom. headroom reads local Claude subscription credentials and contacts api.anthropic.com to report usage caps."
     }
   ]
 }

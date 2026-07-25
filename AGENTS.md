@@ -27,9 +27,17 @@ skills/
 
 ## Script standards
 
-- Start with `#!/bin/bash` and `set -e`.
-- Status messages go to stderr; JSON output goes to stdout.
+- Shell helpers start with `#!/bin/bash` and `set -e`.
+- Python helpers start with `#!/usr/bin/env python3`, import only the standard
+  library, and assert a minimum version. Reach for Python when date arithmetic,
+  JSON parsing, or a platform API makes bash the wrong tool; otherwise use bash.
+- Status messages go to stderr; JSON output goes to stdout. This is for context
+  efficiency, not privacy: the harness captures both streams into the
+  transcript, so stderr is not a hiding place.
 - Clean up temp files with traps.
+- A script that reads credentials never prints them, never writes them to a
+  cache or log, and never passes them as an argument or environment variable to
+  a child process. Report a byte count on a parse failure, never the payload.
 
 ## Provenance
 
