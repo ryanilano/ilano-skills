@@ -29,10 +29,9 @@ Compresses a loose task description into a structured, token-efficient prompt fo
 
 ### [Headroom](skills/headroom)
 
-Reports Claude subscription headroom across multiple accounts and says which one to work on and whether to spend or conserve. Covers Claude Pro and Max subscriptions bought directly from Anthropic; it cannot report on Bedrock, Vertex, pay-as-you-go API keys, or non-Anthropic providers.
+Reports Claude subscription headroom across multiple accounts and says which one to work on and whether to spend or conserve. Covers Claude Pro and Max bought directly from Anthropic, not Bedrock, Vertex, API keys, or other providers.
 
-> [!IMPORTANT]
-> **This skill reads credentials.** It reads the OAuth token Claude Code stores for each account (macOS Keychain, or `.credentials.json` elsewhere) and makes one HTTPS request to `https://api.anthropic.com/api/oauth/usage`. Your token is never printed, logged, cached, or passed as a command argument, and it never leaves your machine except in that one `Authorization` header. It writes only derived percentages and reset times, to `~/.cache/headroom/`. Full detail is in [its SKILL.md](skills/headroom/SKILL.md).
+Reads your local Claude OAuth token and calls Anthropic's usage endpoint; [SKILL.md](skills/headroom/SKILL.md) covers exactly what it touches.
 
 ## Structure
 
