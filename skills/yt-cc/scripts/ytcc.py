@@ -175,67 +175,757 @@ def cards():
     return out
 
 
+BOARD_CSS = """
+:root {
+  --yellow:#fff102; --ink:#0b0b0b; --paper:#fff; --dim:#62666e; --rule:#d8d5cd;
+  --card:#fff; --link:#0b5fa5; --chip:#f3f1ea; --shadow:rgba(0,0,0,.09);
+}
+:root[data-theme="dark"] {
+  --yellow:#ffe814; --ink:#f2f4f7; --paper:#0e1013; --dim:#8b939f; --rule:#262c35;
+  --card:#14181d; --link:#79b8ff; --chip:#1a1f26; --shadow:rgba(0,0,0,.6);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --yellow:#ffe814; --ink:#f2f4f7; --paper:#0e1013; --dim:#8b939f; --rule:#262c35;
+    --card:#14181d; --link:#79b8ff; --chip:#1a1f26; --shadow:rgba(0,0,0,.6);
+  }
+}
+* { box-sizing:border-box; }
+body { background:var(--paper); color:var(--ink); margin:0;
+  font:16px/1.5 -apple-system,system-ui,"Helvetica Neue",sans-serif; }
+a { color:inherit; }
+.masthead { background:var(--yellow); }
+.mast-inner { max-width:78rem; margin:0 auto; padding:.6rem 1.25rem;
+  display:flex; align-items:center; gap:1.5rem; }
+.wordmark { font:800 2.1rem/1 Charter,"Iowan Old Style",Georgia,serif; color:#0b0b0b;
+  letter-spacing:-.03em; text-decoration:none; }
+.wordmark span { color:#0b0b0b; }
+.mastnav { display:flex; gap:0; flex:1; flex-wrap:wrap;
+  font:700 .78rem/1 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing:.04em; }
+.mastnav a { color:#0b0b0b; text-decoration:none; padding:.4rem .9rem;
+  border-left:1px solid rgba(0,0,0,.35); }
+.mastnav a:first-child { border-left:0; }
+.mastnav a:hover { text-decoration:underline; }
+.tbtn { background:transparent; border:1px solid rgba(0,0,0,.5); color:#0b0b0b;
+  border-radius:99px; width:2rem; height:2rem; cursor:pointer; font-size:.9rem; flex:none; }
+.strip { max-width:78rem; margin:0 auto; padding:1rem 1.25rem .9rem;
+  font:.78rem/1.5 ui-monospace,SFMono-Regular,Menlo,monospace; color:var(--dim);
+  letter-spacing:.02em; }
+.strip b { color:var(--ink); }
+.wrap { max-width:78rem; margin:0 auto; padding:0 1.25rem 5rem; }
+.three { display:grid; grid-template-columns:17rem minmax(0,1fr) 19rem; gap:2rem;
+  align-items:start; padding-top:.5rem; }
+.boxhead { font:700 .78rem/1 ui-monospace,SFMono-Regular,Menlo,monospace;
+  letter-spacing:.14em; text-transform:uppercase; margin:0 0 1rem; }
+.starthere { border:1px solid var(--rule); padding:1.1rem 1.15rem 1.25rem; }
+.startlist { list-style:none; margin:0; padding:0; }
+.startlist li { display:grid; grid-template-columns:1.5rem 1fr; gap:.6rem;
+  padding:.75rem 0; border-top:1px solid var(--rule); }
+.startlist li:first-child { border-top:0; padding-top:0; }
+.num { width:1.4rem; height:1.4rem; border-radius:50%; background:var(--yellow); color:#0b0b0b;
+  font:700 .72rem/1.4rem ui-monospace,monospace; text-align:center; }
+.startlist a { font:600 .92rem/1.35 Charter,Georgia,serif; text-decoration:none;
+  display:block; margin-bottom:.2rem; }
+.startlist a:hover { text-decoration:underline; }
+.tiny { display:block; font-size:.68rem; color:var(--dim);
+  font-family:ui-monospace,monospace; letter-spacing:.02em; }
+.grabform { display:flex; gap:.4rem; flex-wrap:wrap; margin-top:1.1rem;
+  padding-top:1rem; border-top:1px solid var(--rule); }
+.grabform input[name=url] { flex:1 1 100%; background:var(--chip); color:var(--ink);
+  border:1px solid var(--rule); padding:.5rem .6rem; font-size:.85rem; border-radius:2px; }
+.vid { font-size:.72rem; color:var(--dim); display:flex; align-items:center; gap:.3rem; }
+.grab { background:var(--ink); color:var(--paper); border:0; padding:.45rem 1rem;
+  font:700 .75rem/1 ui-monospace,monospace; letter-spacing:.08em; text-transform:uppercase;
+  cursor:pointer; margin-left:auto; }
+.hero { min-width:0; }
+.hero-img { width:100%; aspect-ratio:16/9; object-fit:cover; display:block; background:#000; }
+.kicker { font:700 .7rem/1 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--dim); margin:1rem 0 .6rem; text-align:center; }
+.hero-h { font:700 2.5rem/1.08 Charter,"Iowan Old Style",Georgia,serif; letter-spacing:-.025em;
+  margin:0 0 .6rem; text-align:center; }
+.hero-h a { text-decoration:none; }
+.hero-h a:hover { text-decoration:underline; }
+.hero-sub { font:1.05rem/1.4 Charter,Georgia,serif; color:var(--dim); text-align:center;
+  margin:0 0 .7rem; }
+.hero-by { font:.72rem/1 ui-monospace,monospace; letter-spacing:.06em; text-transform:uppercase;
+  color:var(--dim); text-align:center; margin:0; }
+.hero-by a { color:var(--link); }
+.rail { border-left:1px solid var(--rule); padding-left:1.5rem; }
+.railitem { display:grid; grid-template-columns:1fr 5.5rem; gap:.75rem;
+  padding:.9rem 0; border-bottom:1px solid var(--rule); align-items:start; }
+.railitem:first-child { padding-top:0; }
+.label { font:700 .64rem/1 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing:.12em;
+  text-transform:uppercase; color:var(--dim); margin:0 0 .35rem; }
+.railitem h3 { font:700 .95rem/1.25 Charter,Georgia,serif; margin:0; }
+.railitem h3 a { text-decoration:none; }
+.railitem h3 a:hover { text-decoration:underline; }
+.railthumb img { width:5.5rem; height:3.2rem; object-fit:cover; display:block; background:#000; }
+.railthumb.noimg img { display:none; }
+.ruler { border-top:2px dotted var(--rule); margin:2.75rem 0 1.5rem; }
+.allhead { display:flex; align-items:center; gap:1rem; margin-bottom:1.25rem; flex-wrap:wrap; }
+.allhead .boxhead { margin:0; }
+#filter { flex:1; min-width:12rem; max-width:22rem; background:var(--chip); color:var(--ink);
+  border:1px solid var(--rule); padding:.45rem .65rem; font-size:.85rem; border-radius:2px; }
+#filter:focus { outline:2px solid var(--yellow); outline-offset:0; }
+.grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(16rem,1fr));
+  gap:2rem 1.5rem; align-items:start; }
+.card { background:var(--card); min-width:0; }
+.posterlink { display:block; position:relative; line-height:0; }
+.poster { width:100%; aspect-ratio:16/9; object-fit:cover; display:block; background:#05070a; }
+.posterlink.noimg .poster { display:none; }
+.posterlink.noimg::before { content:""; display:block; aspect-ratio:16/9; background:var(--chip); }
+.dur { position:absolute; right:.4rem; bottom:.4rem; background:rgba(4,6,9,.85); color:#fff;
+  font:.65rem/1 ui-monospace,monospace; padding:.2rem .35rem; }
+.body { padding:.7rem 0 0; }
+.t { font:700 1rem/1.28 Charter,Georgia,serif; margin:0 0 .35rem; }
+.t a { text-decoration:none; }
+.t a:hover { text-decoration:underline; }
+.dim { color:var(--dim); font:.7rem/1.4 ui-monospace,monospace; letter-spacing:.02em;
+  margin:0 0 .6rem; }
+.row { display:flex; gap:.3rem; flex-wrap:wrap; padding-top:.55rem;
+  border-top:1px dotted var(--rule); }
+.btn { background:transparent; color:var(--dim); border:1px solid var(--rule); border-radius:2px;
+  font:.68rem/1 ui-monospace,monospace; letter-spacing:.04em; text-transform:uppercase;
+  padding:.3rem .5rem; text-decoration:none; cursor:pointer; }
+.btn:hover { background:var(--yellow); color:#0b0b0b; border-color:var(--yellow); }
+.btn.src:hover { background:var(--ink); color:var(--paper); border-color:var(--ink); }
+.msg { border-left:4px solid var(--yellow); background:var(--chip); padding:.65rem .9rem;
+  margin:1rem 0; font-size:.85rem; }
+.msg.err { border-left-color:#d2413a; }
+@media (max-width:70rem) {
+  .three { grid-template-columns:1fr; gap:2.5rem; }
+  .rail { border-left:0; padding-left:0; border-top:2px dotted var(--rule); padding-top:1.5rem; }
+  .hero-h { font-size:2.1rem; }
+}
+@media (max-width:34rem) {
+  .wordmark { font-size:1.7rem; }
+  .hero-h { font-size:1.65rem; }
+  .grid { grid-template-columns:1fr; gap:1.75rem; }
+  .wrap, .strip, .mast-inner { padding-left:.9rem; padding-right:.9rem; }
+}
+"""
+
+
+def total_minutes():
+    """Sum duration_string across the store. Accepts H:MM:SS, M:SS, and "9 min"."""
+    total = 0
+    for c in cards():
+        d = str(c.get("duration_string") or "")
+        if ":" in d:
+            parts = [int(x) for x in d.split(":") if x.isdigit()]
+            if len(parts) == 3:
+                total += parts[0] * 60 + parts[1]
+            elif len(parts) == 2:
+                total += parts[0]
+        else:
+            m = re.match(r"(\d+)", d)
+            if m:
+                total += int(m.group(1))
+    return f"{total:,}"
+
+
 def page(msg=""):
     e = html.escape
-    card_html = "".join(f"""
-<div class="card">
-  {("<video controls preload='none' poster='/thumb/" + e(c['id']) + ".jpg' src='/video/" + e(c['id']) + ".mp4'></video>") if c.get('has_video') else ("<a href='/t/" + e(c['id']) + ".md'><img src='/thumb/" + e(c['id']) + ".jpg' alt='' loading='lazy' onerror=\"this.style.display='none'\"></a>")}
+    cs = cards()
+
+    def views_of(c):
+        n = c.get("view_count")
+        if not isinstance(n, int):
+            return ""
+        if n >= 1_000_000:
+            return f"{n / 1_000_000:.1f}M views"
+        if n >= 1_000:
+            return f"{n // 1000}K views"
+        return f"{n} views"
+
+    def when_of(c):
+        d = str(c.get("upload_date") or "")
+        return f"{d[0:4]}.{d[4:6]}.{d[6:8]}" if len(d) == 8 and d.isdigit() else ""
+
+    def meta_line(c):
+        return " · ".join(x for x in (when_of(c), views_of(c)) if x)
+
+    def poster(c, cls="poster"):
+        cid = e(c["id"])
+        if c.get("has_video"):
+            return (f"<video class='{cls}' controls preload='none' poster='/thumb/{cid}.jpg' "
+                    f"src='/video/{cid}.mp4'></video>")
+        return (f"<a class='posterlink' href='/read/{cid}'>"
+                f"<img class='{cls}' src='/thumb/{cid}.jpg' alt='' loading='lazy' "
+                f"onerror=\"this.closest('.posterlink').classList.add('noimg')\">"
+                f"<span class='dur'>{e(c.get('duration_string', ''))}</span></a>")
+
+    hero = cs[0] if cs else None
+    rail = cs[1:6]
+    rest = cs[6:]
+
+    channels = {}
+    for c in cs:
+        channels[c.get("channel", "?")] = channels.get(c.get("channel", "?"), 0) + 1
+    chan_nav = ("<a href='/channel'>Channels</a><a href='/topic'>Topics</a>"
+                + "".join(f"<a href='/channel/{slugify(k)}'>{e(k)}</a>"
+                          for k, _ in sorted(channels.items(), key=lambda kv: -kv[1])[:3]))
+
+    hero_html = f"""
+<section class="hero">
+  {poster(hero, "poster hero-img")}
+  <p class="kicker">{e(hero.get('channel', ''))}</p>
+  <h2 class="hero-h"><a href="/read/{e(hero['id'])}">{e(hero['title'])}</a></h2>
+  <p class="hero-sub">{e(hero.get('duration_string', ''))} · {e(hero.get('sub_source', ''))} · {e(meta_line(hero))}</p>
+  <p class="hero-by">Transcript · <a href="{e(hero['url'])}" target="_blank" rel="noopener">watch the original</a></p>
+</section>""" if hero else "<section class='hero'><p class='dim'>nothing grabbed yet</p></section>"
+
+    start_here = "".join(f"""
+  <li><span class="num">{i}</span>
+      <a href="/read/{e(c['id'])}">{e(c['title'])}</a>
+      <span class="tiny">{e(c.get('channel', ''))} · {e(c.get('duration_string', ''))}</span></li>"""
+        for i, c in enumerate(cs[:4], 1))
+
+    rail_html = "".join(f"""
+  <article class="railitem">
+    <div class="railtext">
+      <p class="label">{e(c.get('channel', ''))}</p>
+      <h3><a href="/read/{e(c['id'])}">{e(c['title'])}</a></h3>
+    </div>
+    <a class="railthumb posterlink" href="/read/{e(c['id'])}">
+      <img src="/thumb/{e(c['id'])}.jpg" alt="" loading="lazy"
+           onerror="this.closest('.posterlink').classList.add('noimg')"></a>
+  </article>""" for c in rail)
+
+    grid_html = "".join(f"""
+<article class="card" data-channel="{e(c.get('channel', ''))}" data-title="{e(c['title'].lower())}">
+  {poster(c)}
   <div class="body">
-    <div class="t">{e(c['title'])}</div>
-    <div class="dim">{e(c.get('channel', '?'))} · {e(c.get('duration_string', '?'))} · {e(c.get('sub_source', ''))}</div>
+    <p class="label">{e(c.get('channel', '?'))}</p>
+    <h3 class="t"><a href="/read/{e(c['id'])}">{e(c['title'])}</a></h3>
+    <p class="dim">{e(meta_line(c))}{' · ' if meta_line(c) else ''}{e(c.get('sub_source', ''))}</p>
     <div class="row">
-      <a class="btn" href="/t/{e(c['id'])}.md">MD</a>
-      <a class="btn" href="/t/{e(c['id'])}.json">JSON</a>
-      <button class="btn" onclick="copyT('{e(c['id'])}','md',this)">copy md</button>
-      <button class="btn" onclick="copyT('{e(c['id'])}','json',this)">copy json</button>
+      <a class="btn" href="/read/{e(c['id'])}">read</a>
+      <button class="btn" onclick="copyT('{e(c['id'])}','md',this)">copy</button>
+      <a class="btn" href="/t/{e(c['id'])}.md">raw</a>
       {("<a class='btn' href='/video/" + e(c['id']) + ".mp4' download>video</a>") if c.get('has_video') else ""}
-      <a class="btn src" href="{e(c['url'])}">source ↗</a>
+      <a class="btn src" href="{e(c['url'])}" target="_blank" rel="noopener">source ↗</a>
     </div>
   </div>
-</div>""" for c in cards())
+</article>""" for c in rest)
+
     return f"""<!doctype html><html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>yt-cc</title><style>
-:root {{ color-scheme: dark; }}
-body {{ background:#0d0f12; color:#d7dce2; font:16px/1.45 -apple-system,system-ui,sans-serif;
-       margin:0 auto; padding:1rem; max-width:64rem; }}
-h1 {{ font-size:1.2rem; margin:0 0 .75rem; }}
-form {{ display:flex; gap:.5rem; margin-bottom:1rem; }}
-input {{ flex:1; background:#161a20; color:#d7dce2; border:1px solid #232830;
-        border-radius:6px; padding:.6rem .8rem; font-size:1rem; }}
-.grid {{ display:grid; grid-template-columns:repeat(auto-fill,minmax(15rem,1fr)); gap:1rem; }}
-.card {{ background:#12151a; border:1px solid #1e232b; border-radius:8px; overflow:hidden; }}
-.card img, .card video {{ width:100%; aspect-ratio:16/9; object-fit:cover; display:block; background:#000; }}
-.body {{ padding:.6rem .7rem .8rem; }}
-.t {{ font-weight:600; font-size:.9rem; margin-bottom:.3rem; }}
-.dim {{ color:#5b6470; font-size:.75rem; margin-bottom:.55rem; }}
-.row {{ display:flex; gap:.4rem; flex-wrap:wrap; }}
-.btn {{ background:#1d2733; color:#8fb8d8; border:0; border-radius:4px; font-size:.75rem;
-       padding:.25rem .55rem; text-decoration:none; cursor:pointer; }}
-.btn:active {{ background:#2a3a4d; }}
-.btn.src {{ background:#233; color:#7fd1c7; }}
-.msg {{ background:#14231c; border:1px solid #1f4232; color:#8fd8b0; border-radius:6px;
-       padding:.5rem .8rem; margin-bottom:1rem; font-size:.85rem; }}
-.msg.err {{ background:#231414; border-color:#42201f; color:#e08f8f; }}
-.vid {{ display:flex; align-items:center; gap:.3rem; color:#8fb8d8; font-size:.85rem; white-space:nowrap; }}
-button.grab {{ background:#7fd1c7; color:#0d0f12; font-weight:700; border:0;
-              border-radius:6px; padding:.6rem 1rem; cursor:pointer; }}
-</style></head><body>
-<h1>yt-cc · transcripts for humans and bots</h1>
-<form method="post" action="/grab">
-  <input name="url" placeholder="paste a video URL, get captions" required>
-  <label class="vid"><input type="checkbox" name="video" value="1"> 1080p mp4</label>
-  <button class="grab">grab</button>
-</form>
-{msg}
-<div class="grid">{card_html or "<p class='dim'>nothing grabbed yet</p>"}</div>
+<title>yt-cc</title><style>{BOARD_CSS}</style></head><body>
+<header class="masthead">
+  <div class="mast-inner">
+    <a class="wordmark" href="/">yt<span>·</span>cc</a>
+    <nav class="mastnav">{chan_nav}<a href="#all">Archive</a></nav>
+    <button class="tbtn" id="theme" title="light / dark">◐</button>
+  </div>
+</header>
+
+<div class="strip"><b>Making sense of it all:</b> {len(cs)} transcripts / {total_minutes()} minutes / captions only, nothing streamed</div>
+
+<main class="wrap">
+  {msg}
+  <div class="three">
+    <aside class="starthere">
+      <h2 class="boxhead">Start here</h2>
+      <ol class="startlist">{start_here}</ol>
+      <form method="post" action="/grab" class="grabform">
+        <input name="url" placeholder="paste a video URL" required>
+        <label class="vid"><input type="checkbox" name="video" value="1"> mp4</label>
+        <button class="grab">Grab</button>
+      </form>
+    </aside>
+    {hero_html}
+    <aside class="rail">{rail_html}</aside>
+  </div>
+
+  <div class="ruler"></div>
+  <div class="allhead">
+    <h2 class="boxhead" id="all">The archive</h2>
+    <input id="filter" placeholder="filter by title or channel" autocomplete="off">
+  </div>
+  <div class="grid">{grid_html}</div>
+</main>
+
 <script>
-async function copyT(id, kind, btn) {{
+const root = document.documentElement, btn = document.getElementById('theme');
+const saved = localStorage.getItem('ytcc-theme');
+if (saved) root.setAttribute('data-theme', saved);
+btn.onclick = () => {{
+  const now = root.getAttribute('data-theme')
+    || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+  const next = now === 'dark' ? 'light' : 'dark';
+  root.setAttribute('data-theme', next);
+  localStorage.setItem('ytcc-theme', next);
+}};
+async function copyT(id, kind, b) {{
   const r = await fetch('/t/' + id + '.' + kind);
   await navigator.clipboard.writeText(await r.text());
-  const old = btn.textContent; btn.textContent = 'copied';
-  setTimeout(() => btn.textContent = old, 1200);
+  const old = b.textContent; b.textContent = 'copied'; setTimeout(() => b.textContent = old, 1200);
 }}
+const f = document.getElementById('filter');
+f && f.addEventListener('input', () => {{
+  const q = f.value.toLowerCase().trim();
+  document.querySelectorAll('.grid .card').forEach(c => {{
+    const hit = !q || c.dataset.title.includes(q)
+      || (c.dataset.channel || '').toLowerCase().includes(q);
+    c.style.display = hit ? '' : 'none';
+  }});
+}});
+</script></body></html>"""
+
+
+# ----------------------------------------------------------------- markdown -> html
+# A GitHub-flavoured subset, enough for transcripts and notes: headings, bold,
+# italic, inline code, links, fenced and indented code, blockquotes, lists,
+# tables, rules, and the **[MM:SS]** timestamp marks yt-cc writes. Stdlib only,
+# because adding a markdown dependency to a zero-install tool is not worth it.
+
+_MD_INLINE = [
+    (re.compile(r"`([^`]+)`"), lambda m: f"<code>{html.escape(m.group(1))}</code>"),
+    (re.compile(r"\*\*\[(\d{1,2}:\d{2}(?::\d{2})?)\]\*\*\s*"),
+     lambda m: f"<span class='ts' id='t{m.group(1).replace(':', '-')}'>{m.group(1)}</span>"),
+    (re.compile(r"\*\*([^*]+)\*\*"), lambda m: f"<strong>{m.group(1)}</strong>"),
+    (re.compile(r"(?<![\w*])\*([^*\n]+)\*(?![\w*])"), lambda m: f"<em>{m.group(1)}</em>"),
+    (re.compile(r"~~([^~]+)~~"), lambda m: f"<del>{m.group(1)}</del>"),
+    (re.compile(r"\[([^\]]+)\]\(([^)\s]+)\)"),
+     lambda m: f"<a href='{html.escape(m.group(2), quote=True)}'>{m.group(1)}</a>"),
+    (re.compile(r"(?<![\"'>=])\b(https?://[^\s<>\"')]+)"),
+     lambda m: f"<a href='{html.escape(m.group(1), quote=True)}'>{m.group(1)}</a>"),
+]
+
+
+def md_inline(text):
+    out = html.escape(text)
+    for pat, fn in _MD_INLINE:
+        out = pat.sub(fn, out)
+    return out
+
+
+def md_to_html(src):
+    """Markdown subset to HTML. Never raises; unknown syntax passes through as text."""
+    lines = src.replace("\r\n", "\n").split("\n")
+    out, i, n = [], 0, len(lines)
+    para, list_stack = [], []
+
+    def flush_para():
+        if para:
+            body = md_inline(" ".join(para).strip())
+            if body:
+                out.append(f"<p>{body}</p>")
+            para.clear()
+
+    def close_lists(to=0):
+        while len(list_stack) > to:
+            out.append(f"</{list_stack.pop()}>")
+
+    while i < n:
+        line = lines[i]
+        stripped = line.strip()
+
+        if stripped.startswith("```") or stripped.startswith("~~~"):
+            fence = stripped[:3]
+            lang = stripped[3:].strip()
+            flush_para(); close_lists()
+            body, i = [], i + 1
+            while i < n and not lines[i].strip().startswith(fence):
+                body.append(lines[i]); i += 1
+            cls = f" class='lang-{html.escape(lang, quote=True)}'" if lang else ""
+            out.append(f"<pre><code{cls}>{html.escape(chr(10).join(body))}</code></pre>")
+            i += 1
+            continue
+
+        if not stripped:
+            flush_para(); close_lists()
+            i += 1
+            continue
+
+        m = re.match(r"^(#{1,6})\s+(.*)$", stripped)
+        if m:
+            flush_para(); close_lists()
+            lvl = len(m.group(1))
+            text = m.group(2).rstrip("#").strip()
+            slug = re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-")[:60]
+            out.append(f"<h{lvl} id='{slug}'>{md_inline(text)}</h{lvl}>")
+            i += 1
+            continue
+
+        if re.match(r"^(\*\s*){3,}$|^(-\s*){3,}$|^(_\s*){3,}$", stripped):
+            flush_para(); close_lists()
+            out.append("<hr>")
+            i += 1
+            continue
+
+        if stripped.startswith(">"):
+            flush_para(); close_lists()
+            quote = []
+            while i < n and lines[i].strip().startswith(">"):
+                quote.append(lines[i].strip()[1:].lstrip())
+                i += 1
+            out.append(f"<blockquote>{md_to_html(chr(10).join(quote))}</blockquote>")
+            continue
+
+        # table: a header row followed by a delimiter row of dashes and pipes
+        if "|" in stripped and i + 1 < n and re.match(r"^\|?[\s:|-]+\|[\s:|-]*$", lines[i + 1].strip()):
+            flush_para(); close_lists()
+            def cells(row):
+                row = row.strip().strip("|")
+                return [c.strip() for c in row.split("|")]
+            head = cells(lines[i])
+            align = []
+            for spec in cells(lines[i + 1]):
+                if spec.startswith(":") and spec.endswith(":"):
+                    align.append(" style='text-align:center'")
+                elif spec.endswith(":"):
+                    align.append(" style='text-align:right'")
+                else:
+                    align.append("")
+            rows, i = [], i + 2
+            while i < n and "|" in lines[i] and lines[i].strip():
+                rows.append(cells(lines[i])); i += 1
+            th = "".join(f"<th{align[j] if j < len(align) else ''}>{md_inline(c)}</th>"
+                         for j, c in enumerate(head))
+            body = "".join(
+                "<tr>" + "".join(f"<td{align[j] if j < len(align) else ''}>{md_inline(c)}</td>"
+                                 for j, c in enumerate(r)) + "</tr>" for r in rows)
+            out.append(f"<div class='tablewrap'><table><thead><tr>{th}</tr></thead><tbody>{body}</tbody></table></div>")
+            continue
+
+        m = re.match(r"^(\s*)([-*+]|\d+[.)])\s+(.*)$", line)
+        if m:
+            flush_para()
+            depth = len(m.group(1)) // 2 + 1
+            kind = "ol" if m.group(2)[0].isdigit() else "ul"
+            while len(list_stack) > depth:
+                out.append(f"</{list_stack.pop()}>")
+            if len(list_stack) < depth:
+                out.append(f"<{kind}>"); list_stack.append(kind)
+            elif list_stack and list_stack[-1] != kind:
+                out.append(f"</{list_stack.pop()}>"); out.append(f"<{kind}>"); list_stack.append(kind)
+            item = m.group(3)
+            box = re.match(r"^\[([ xX])\]\s+(.*)$", item)
+            if box:
+                checked = " checked" if box.group(1).lower() == "x" else ""
+                out.append(f"<li class='task'><input type='checkbox' disabled{checked}> {md_inline(box.group(2))}</li>")
+            else:
+                out.append(f"<li>{md_inline(item)}</li>")
+            i += 1
+            continue
+
+        para.append(stripped)
+        i += 1
+
+    flush_para(); close_lists()
+    return "\n".join(out)
+
+
+READER_CSS = """
+:root {
+  --bg:#fbfaf8; --fg:#16181d; --dim:#5f6672; --rule:#e3e0da; --card:#fff;
+  --accent:#0b0b0b; --yellow:#fff102; --code-bg:#f2efe9; --link:#0b5fa5; --mark:#8a8378;
+}
+:root[data-theme="dark"] {
+  --bg:#0f1216; --fg:#e6e9ee; --dim:#8d95a3; --rule:#232a34; --card:#151a21;
+  --accent:#ffe814; --yellow:#ffe814; --code-bg:#1a212a; --link:#79b8ff; --mark:#6e7887;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg:#0f1216; --fg:#e6e9ee; --dim:#8d95a3; --rule:#232a34; --card:#151a21;
+    --accent:#ffe814; --yellow:#ffe814; --code-bg:#1a212a; --link:#79b8ff; --mark:#6e7887;
+  }
+}
+* { box-sizing:border-box; }
+body { background:var(--bg); color:var(--fg); margin:0;
+  font:19px/1.65 Charter,"Iowan Old Style","Source Serif Pro",Georgia,"Times New Roman",serif;
+  -webkit-font-smoothing:antialiased; }
+.topbar { position:sticky; top:0; z-index:9; background:color-mix(in srgb, var(--bg) 92%, transparent);
+  backdrop-filter:saturate(1.4) blur(8px); border-bottom:1px solid var(--rule); }
+.topbar .inner { max-width:46rem; margin:0 auto; padding:.7rem 1.25rem;
+  display:flex; align-items:center; gap:.75rem;
+  font-family:-apple-system,system-ui,sans-serif; font-size:.8rem; }
+.topbar a { color:var(--dim); text-decoration:none; }
+.topbar a:hover { color:var(--fg); }
+.spacer { flex:1; }
+.tbtn { background:transparent; border:1px solid var(--rule); color:var(--dim);
+  border-radius:99px; padding:.25rem .7rem; font:inherit; cursor:pointer; }
+.tbtn:hover { color:var(--fg); border-color:var(--mark); }
+.progress { position:fixed; top:0; left:0; height:3px; background:var(--yellow); width:0; z-index:10; }
+article { max-width:46rem; margin:0 auto; padding:2.5rem 1.25rem 6rem; }
+.kicker { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:.7rem; font-weight:700;
+  letter-spacing:.14em; text-transform:uppercase; color:var(--fg); margin-bottom:.75rem;
+  display:inline-block; background:var(--yellow); color:#0b0b0b; padding:.2rem .5rem; }
+h1 { font-size:2.4rem; line-height:1.12; letter-spacing:-.02em; margin:0 0 .75rem;
+  font-weight:700; }
+.byline { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:.75rem; color:var(--dim);
+  border-bottom:2px dotted var(--rule); padding-bottom:1.1rem; margin-bottom:2rem;
+  letter-spacing:.02em; }
+.byline a { color:var(--link); text-decoration:none; }
+.stats { display:flex; gap:1.5rem; flex-wrap:wrap; margin-top:.7rem; }
+.stat b { display:block; font-family:-apple-system,system-ui,sans-serif; font-size:1.05rem;
+  color:var(--fg); font-weight:650; font-variant-numeric:tabular-nums; }
+.stat span { font-size:.62rem; letter-spacing:.12em; text-transform:uppercase; color:var(--dim);
+  font-family:ui-monospace,monospace; }
+article p { margin:0 0 1.25rem; }
+article p:first-of-type::first-letter { float:left; font-size:3.6rem; line-height:.8;
+  padding:.3rem .55rem .1rem 0; font-weight:700; color:var(--fg); }
+h2,h3,h4 { font-family:Charter,"Iowan Old Style",Georgia,serif; letter-spacing:-.015em;
+  margin:2.5rem 0 .85rem; line-height:1.22; font-weight:700; }
+h2 { font-size:1.4rem; } h3 { font-size:1.15rem; } h4 { font-size:1rem; }
+a { color:var(--link); }
+.ts { display:inline-block; font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  font-size:.68rem; color:var(--mark); background:var(--code-bg); border-radius:4px;
+  padding:.1rem .4rem; margin-right:.5rem; vertical-align:.12em; letter-spacing:.02em; }
+code { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:.85em;
+  background:var(--code-bg); padding:.12em .35em; border-radius:4px; }
+pre { background:var(--code-bg); border:1px solid var(--rule); border-radius:8px;
+  padding:1rem; overflow-x:auto; }
+pre code { background:none; padding:0; font-size:.8rem; line-height:1.55; }
+blockquote { margin:1.75rem 0; padding:.2rem 0 .2rem 1.25rem; border-left:4px solid var(--yellow);
+  color:var(--dim); font-style:italic; }
+blockquote p:last-child { margin-bottom:0; }
+ul,ol { margin:0 0 1.25rem; padding-left:1.4rem; }
+li { margin-bottom:.4rem; }
+li.task { list-style:none; margin-left:-1.2rem; }
+hr { border:0; border-top:2px dotted var(--rule); margin:2.5rem 0; }
+.tablewrap { overflow-x:auto; margin:0 0 1.5rem; }
+table { border-collapse:collapse; width:100%; font-family:-apple-system,system-ui,sans-serif;
+  font-size:.85rem; }
+th,td { border:1px solid var(--rule); padding:.5rem .65rem; text-align:left; }
+th { background:var(--code-bg); font-weight:650; }
+tbody tr:nth-child(even) { background:color-mix(in srgb, var(--code-bg) 45%, transparent); }
+@media (max-width:34rem) {
+  body { font-size:17.5px; }
+  h1 { font-size:1.85rem; }
+  article { padding:1.75rem 1.1rem 4rem; }
+}
+@media print {
+  .topbar,.progress { display:none; }
+  body { background:#fff; color:#000; }
+}
+"""
+
+
+def reader(vid):
+    """One transcript rendered as a reading page. None when the video is unknown."""
+    d = STORE / vid
+    mdf, metaf = d / "transcript.md", d / "meta.json"
+    if not mdf.exists():
+        return None
+    meta = json.loads(metaf.read_text()) if metaf.exists() else {}
+    raw = mdf.read_text(errors="replace")
+
+    # The first three lines are yt-cc's own header; the page renders them as a byline.
+    body = raw.split("\n")
+    if body and body[0].startswith("# "):
+        title = body[0][2:].strip()
+        rest = body[1:]
+        while rest and (not rest[0].strip() or rest[0].startswith(("Channel:", "Grabbed:"))):
+            rest.pop(0)
+        raw = "\n".join(rest)
+    else:
+        title = meta.get("title", vid)
+
+    e = html.escape
+    words = len(raw.split())
+    n = meta.get("view_count")
+    views = (f"{n/1_000_000:.1f}M" if isinstance(n, int) and n >= 1_000_000
+             else f"{n//1000}K" if isinstance(n, int) and n >= 1000
+             else str(n) if isinstance(n, int) else "–")
+    up = str(meta.get("upload_date") or "")
+    when = f"{up[0:4]}-{up[4:6]}-{up[6:8]}" if len(up) == 8 and up.isdigit() else "–"
+    src = meta.get("sub_source", "")
+    caution = ("<p class='kicker' style='color:var(--mark);margin-top:1rem'>"
+               "Machine transcription · verify names and numbers before quoting</p>"
+               if "auto" in src else "")
+
+    return f"""<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{e(title)}</title>
+<style>{READER_CSS}</style></head><body>
+<div class="progress" id="prog"></div>
+<nav class="topbar"><div class="inner">
+  <a href="/">← all transcripts</a>
+  <span class="spacer"></span>
+  <a href="/t/{e(vid)}.md">raw</a>
+  <a href="{e(meta.get('url', '#'))}" target="_blank" rel="noopener">source ↗</a>
+  <button class="tbtn" id="theme" title="light / dark">◐</button>
+</div></nav>
+<article>
+  <p class="kicker">{e(meta.get('channel', 'transcript'))}</p>
+  <h1>{e(title)}</h1>
+  <div class="byline">
+    Transcript of <a href="{e(meta.get('url', '#'))}" target="_blank" rel="noopener">this video</a>
+    · {e(src or 'captions')}
+    <div class="stats">
+      <div class="stat"><b>{e(meta.get('duration_string', '–'))}</b><span>runtime</span></div>
+      <div class="stat"><b>{words:,}</b><span>words</span></div>
+      <div class="stat"><b>{max(1, words // 238)}</b><span>min read</span></div>
+      <div class="stat"><b>{e(views)}</b><span>views</span></div>
+      <div class="stat"><b>{e(when)}</b><span>published</span></div>
+    </div>
+    {caution}
+  </div>
+  {md_to_html(raw)}
+</article>
+<script>
+const root = document.documentElement, btn = document.getElementById('theme');
+const saved = localStorage.getItem('ytcc-theme');
+if (saved) root.setAttribute('data-theme', saved);
+btn.onclick = () => {{
+  const now = root.getAttribute('data-theme')
+    || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+  const next = now === 'dark' ? 'light' : 'dark';
+  root.setAttribute('data-theme', next);
+  localStorage.setItem('ytcc-theme', next);
+}};
+const prog = document.getElementById('prog');
+addEventListener('scroll', () => {{
+  const h = document.body.scrollHeight - innerHeight;
+  prog.style.width = (h > 0 ? scrollY / h * 100 : 0) + '%';
+}}, {{passive: true}});
+</script></body></html>"""
+
+
+# ----------------------------------------------------------------- channels and topics
+# Topics are derived, not curated: a small keyword map over titles. It is a
+# router, not a classifier, and every video can land in several topics. The
+# point is a second way to page through 250 transcripts, not a taxonomy.
+
+TOPICS = [
+    ("models", ["gpt", "claude", "llama", "gemini", "qwen", "deepseek", "mistral",
+                "o1", "o3", "sonnet", "opus", "haiku", "kimi", "grok", "model"]),
+    ("agents", ["agent", "mcp", "cursor", "copilot", "codex", "devin", "cline",
+                "claude code", "autonomous", "tool use"]),
+    ("hardware", ["gpu", "cpu", "nvidia", "amd", "radeon", "rtx", "ryzen", "epyc",
+                  "threadripper", "vram", "motherboard", "build", "rack", "server",
+                  "cooling", "psu", "ssd", "nvme", "memory", "ram", "chip"]),
+    ("networking", ["network", "router", "switch", "10g", "25g", "fiber", "vlan",
+                    "haproxy", "proxy", "dns", "firewall", "wifi", "ethernet"]),
+    ("self-hosting", ["self-host", "selfhost", "homelab", "proxmox", "docker",
+                      "kubernetes", "truenas", "unraid", "nas", "home server", "local"]),
+    ("security", ["security", "hack", "exploit", "cve", "breach", "vulnerab",
+                  "malware", "phish", "privacy", "encrypt", "password", "attack"]),
+    ("web dev", ["react", "next.js", "nextjs", "typescript", "javascript", "css",
+                 "tailwind", "svelte", "vue", "node", "framework", "frontend",
+                 "backend", "database", "postgres", "sql", "api"]),
+    ("business", ["startup", "funding", "acquisition", "ipo", "layoff", "hiring",
+                  "salary", "market", "pricing", "revenue", "billion", "million"]),
+    ("industry", ["openai", "anthropic", "google", "microsoft", "meta", "apple",
+                  "amazon", "tesla", "intel", "arm", "tsmc", "sam altman"]),
+]
+
+
+def topics_for(title):
+    t = (title or "").lower()
+    return [name for name, words in TOPICS if any(w in t for w in words)]
+
+
+def slugify(x):
+    return re.sub(r"[^a-z0-9]+", "-", (x or "").lower()).strip("-")[:60] or "other"
+
+
+def grouped():
+    """(channel -> cards, topic -> cards). Both sorted by size, biggest first."""
+    by_channel, by_topic = {}, {}
+    for c in cards():
+        by_channel.setdefault(c.get("channel", "unknown"), []).append(c)
+        hits = topics_for(c.get("title"))
+        for t in (hits or ["unsorted"]):
+            by_topic.setdefault(t, []).append(c)
+    order = lambda d: dict(sorted(d.items(), key=lambda kv: -len(kv[1])))
+    return order(by_channel), order(by_topic)
+
+
+def browse_page(kind, key=None):
+    """kind is 'channel' or 'topic'. Without a key, the index of all of them."""
+    e = html.escape
+    by_channel, by_topic = grouped()
+    groups = by_channel if kind == "channel" else by_topic
+    other = "topic" if kind == "channel" else "channel"
+
+    def card_of(c):
+        cid = e(c["id"])
+        return f"""
+<article class="card">
+  <a class="posterlink" href="/read/{cid}">
+    <img class="poster" src="/thumb/{cid}.jpg" alt="" loading="lazy"
+         onerror="this.closest('.posterlink').classList.add('noimg')">
+    <span class="dur">{e(c.get('duration_string', ''))}</span></a>
+  <div class="body">
+    <p class="label">{e(c.get('channel', ''))}</p>
+    <h3 class="t"><a href="/read/{cid}">{e(c['title'])}</a></h3>
+    <div class="row">
+      <a class="btn" href="/read/{cid}">read</a>
+      <a class="btn src" href="{e(c['url'])}" target="_blank" rel="noopener">source ↗</a>
+    </div>
+  </div>
+</article>"""
+
+    if key is None:
+        body = "<div class='grouplist'>" + "".join(f"""
+<a class="groupcard" href="/{kind}/{slugify(k)}">
+  <span class="gcount">{len(v)}</span>
+  <span class="gname">{e(k)}</span>
+  <span class="gsub">{e(v[0]['title'][:64])}…</span>
+</a>""" for k, v in groups.items()) + "</div>"
+        head = f"All {kind}s"
+        sub = f"{len(groups)} {kind}s across {len(cards())} transcripts"
+    else:
+        match = next((k for k in groups if slugify(k) == key), None)
+        if match is None:
+            return None
+        items = groups[match]
+        body = "<div class='grid'>" + "".join(card_of(c) for c in items) + "</div>"
+        head = match
+        mins = sum(1 for _ in items)
+        sub = f"{len(items)} transcripts in this {kind}"
+
+    nav = " ".join(f"<a href='/{kind}/{slugify(k)}'>{e(k)} <b>{len(v)}</b></a>"
+                   for k, v in list(groups.items())[:12])
+
+    return f"""<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{e(head)} · yt-cc</title><style>{BOARD_CSS}
+.grouplist {{ display:grid; grid-template-columns:repeat(auto-fill,minmax(14rem,1fr)); gap:1rem; }}
+.groupcard {{ border:1px solid var(--rule); padding:1rem 1.1rem; text-decoration:none;
+  display:block; transition:background .15s; }}
+.groupcard:hover {{ background:var(--yellow); color:#0b0b0b; }}
+.gcount {{ display:block; font:700 2rem/1 Charter,Georgia,serif; }}
+.gname {{ display:block; font:700 .78rem/1.3 ui-monospace,monospace; letter-spacing:.1em;
+  text-transform:uppercase; margin:.35rem 0 .4rem; }}
+.gsub {{ display:block; font:.75rem/1.35 Charter,Georgia,serif; color:var(--dim); }}
+.groupcard:hover .gsub {{ color:#333; }}
+.pills {{ display:flex; gap:.4rem; flex-wrap:wrap; margin:0 0 1.75rem; }}
+.pills a {{ border:1px solid var(--rule); padding:.3rem .6rem; text-decoration:none;
+  font:.7rem/1 ui-monospace,monospace; letter-spacing:.05em; text-transform:uppercase; }}
+.pills a:hover {{ background:var(--yellow); color:#0b0b0b; border-color:var(--yellow); }}
+.pills b {{ color:var(--dim); }}
+.pagehead {{ font:700 2.4rem/1.1 Charter,"Iowan Old Style",Georgia,serif;
+  letter-spacing:-.025em; margin:.5rem 0 .3rem; }}
+</style></head><body>
+<header class="masthead"><div class="mast-inner">
+  <a class="wordmark" href="/">yt<span>·</span>cc</a>
+  <nav class="mastnav">
+    <a href="/">Front</a><a href="/channel">Channels</a><a href="/topic">Topics</a>
+  </nav>
+  <button class="tbtn" id="theme" title="light / dark">◐</button>
+</div></header>
+<div class="strip"><b>{e(head)}</b> / {e(sub)} / <a href="/{other}">browse by {other} instead</a></div>
+<main class="wrap">
+  <h1 class="pagehead">{e(head)}</h1>
+  <div class="pills">{nav}</div>
+  {body}
+</main>
+<script>
+const root = document.documentElement, btn = document.getElementById('theme');
+const saved = localStorage.getItem('ytcc-theme');
+if (saved) root.setAttribute('data-theme', saved);
+btn.onclick = () => {{
+  const now = root.getAttribute('data-theme')
+    || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+  const next = now === 'dark' ? 'light' : 'dark';
+  root.setAttribute('data-theme', next);
+  localStorage.setItem('ytcc-theme', next);
+}};
 </script></body></html>"""
 
 
@@ -253,6 +943,18 @@ class H(BaseHTTPRequestHandler):
         p = urlparse(self.path).path
         if p == "/":
             return self._send(page())
+        b = re.match(r"^/(channel|topic)(?:/([\w-]+))?/?$", p)
+        if b:
+            out = browse_page(b.group(1), b.group(2))
+            if out:
+                return self._send(out)
+            return self._send("<p>not found</p>", code=404)
+        r = re.match(r"^/read/([\w-]{6,20})$", p)
+        if r:
+            html_page = reader(r.group(1))
+            if html_page:
+                return self._send(html_page)
+            return self._send("<p>not found</p>", code=404)
         m = re.match(r"^/t/([\w-]{6,20})\.(md|json)$", p)
         if m:
             f = STORE / m.group(1) / f"transcript.{m.group(2)}"
