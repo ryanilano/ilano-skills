@@ -27,14 +27,24 @@ Packages conversation content as one copyable block — a consolidated solution 
 
 Compresses a loose task description into a structured, token-efficient prompt for an agentic coding tool. You orchestrate; the agent executes.
 
+### [docs-mirror](skills/docs-mirror)
+
+Mirrors a whole documentation site or an RSS/Atom feed to local markdown in one command. Plain HTTP, no browser, no per-page model call. Honours robots.txt and rate-limits by default.
+
+### [yt-cc](skills/yt-cc)
+
+Pulls a video's captions to local markdown in one command, and serves a searchable board of everything grabbed. No video download, no transcription API.
+
 ## Structure
 
 ```
 skills/
 └── skill-name/
     ├── SKILL.md          # required — the skill itself
+    ├── PROVENANCE.yaml   # required — origin and credit
     ├── assets/           # optional — files the skill ships
-    └── PROVENANCE.yaml   # origin and credit
+    ├── references/       # optional — docs loaded on demand
+    └── scripts/          # optional — executable helpers
 ```
 
 ## Credits

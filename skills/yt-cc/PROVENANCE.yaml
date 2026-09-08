@@ -1,0 +1,7 @@
+origin: original
+author: Ryan Ilano
+note: >-
+  Bundles scripts/ytcc.py, the transcript-first video CLI and board. Portable
+  (macOS/Linux/WSL), Python 3 standard library only, yt-dlp as the single
+  external dependency. Supersedes the private yt-transcript skill, whose ASR and
+  diarization fallback is not part of this release.
