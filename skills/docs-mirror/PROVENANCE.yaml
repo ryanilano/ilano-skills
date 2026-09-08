@@ -1,0 +1,7 @@
+origin: original
+author: Ryan Ilano
+note: >-
+  Bundles scripts/docs-mirror.py, a site and feed mirror written against the
+  Python 3 standard library only. Honours robots.txt and rate-limits by default.
+  scripts/test_docs_mirror.py is an offline test suite for the HTML to markdown
+  conversion.
