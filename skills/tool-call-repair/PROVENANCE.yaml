@@ -1,0 +1,11 @@
+origin: reimplemented-technique
+author: Ryan Ilano (implementation)
+technique_by: Ahmad Awais (@MrAhmadAwais)
+source: https://commandcode.ai/docs/harness-engineering/tool-call-repairs
+note: >-
+  Independent Python reimplementation of Ahmad Awais's validate-then-repair
+  tool-input layer for Command Code. Bundles scripts/tool_call_repair.py
+  (stdlib-only: lightweight JSON-schema validation, the ordered repair catalogue,
+  path-autolink unwrap, and relational-default helper) and
+  scripts/test_tool_call_repair.py (offline test suite). None of Command Code's
+  proprietary source is used or included; only the publicly documented method.
