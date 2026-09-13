@@ -1,0 +1,19 @@
+origin: vendored
+author: Siqi Chen
+license: MIT
+upstream_repo: https://github.com/blader/humanizer
+upstream_sha: 9862685f575c65a8247f90369951df1b3416e3d6
+upstream_path: .
+upstream_version: 3.0.0
+upstream_url: https://github.com/blader/humanizer/blob/9862685f575c65a8247f90369951df1b3416e3d6/SKILL.md
+fetched: 2026-09-13T02:36Z
+note: >-
+  Byte-identical copy of the upstream repository root at the pinned commit
+  (2026-09-06, "Smooth awkward phrasing in the skill and README"). The skill
+  is Wikipedia's "Signs of AI writing" page turned into an edit loop: mark
+  the tells strongest first, draft, check, final. Read in full by Ryan and
+  the agent on 2026-09-13 before vendoring. LICENSE.upstream duplicates the
+  upstream LICENSE so the credit survives if the copy is ever trimmed.
+related:
+  - writing-fragments, writing-beats, writing-shape (Matt Pocock, vendored here) build the article; humanizer edits the result
+  - plain-writing (private skill in ~/.claude/skills on Ryan's Macs) is the voice sample humanizer should match on Ryan's prose

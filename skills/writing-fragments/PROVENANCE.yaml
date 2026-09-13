@@ -1,0 +1,17 @@
+origin: vendored
+author: Matt Pocock
+license: MIT
+upstream_repo: https://github.com/mattpocock/skills
+upstream_sha: 3cca18b368ae95cdbdebbff572ccafa662551015
+upstream_path: skills/in-progress/writing-fragments
+upstream_url: https://github.com/mattpocock/skills/blob/3cca18b368ae95cdbdebbff572ccafa662551015/skills/in-progress/writing-fragments/SKILL.md
+fetched: 2026-09-13T02:36Z
+note: >-
+  Byte-identical copy of the upstream directory at the pinned commit
+  (2026-09-04). Upstream keeps it under skills/in-progress and marks it
+  disable-model-invocation, so it runs only when typed. The explore half of
+  Pocock's writing workflow: interview the author and append fragments to one
+  file, no structure yet. Read in full on 2026-09-13 before vendoring.
+related:
+  - writing-shape and writing-beats are the two exploit paths that consume the fragments file
+  - humanizer edits the finished article

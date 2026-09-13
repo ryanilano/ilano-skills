@@ -35,6 +35,19 @@ Mirrors a whole documentation site or an RSS/Atom feed to local markdown in one 
 
 Pulls a video's captions to local markdown in one command, and serves a searchable board of everything grabbed. No video download, no transcription API.
 
+## Vendored writing skills
+
+Byte-identical copies of other people's skills, pinned to a commit. `scripts/validate.sh` diffs each one against its upstream on every run, and `scripts/diff-upstream.sh <skill> --latest` shows what upstream changed since. Each directory carries the upstream license as `LICENSE.upstream` and a `PROVENANCE.yaml` with the repo, SHA, path and fetch time.
+
+| Skill | What it does | Source | Author | License | Pinned commit |
+|---|---|---|---|---|---|
+| [humanizer](skills/humanizer) | Edit loop that removes the tells of AI prose, from Wikipedia's "Signs of AI writing" | [blader/humanizer](https://github.com/blader/humanizer) | Siqi Chen | MIT | `9862685` (v3.0.0, 2026-09-06) |
+| [writing-fragments](skills/writing-fragments) | Explore: interview the author, append fragments to one file, no structure yet | [mattpocock/skills](https://github.com/mattpocock/skills) | Matt Pocock | MIT | `3cca18b` (2026-09-04) |
+| [writing-beats](skills/writing-beats) | Exploit: grow the article one beat at a time, author picks the next beat | [mattpocock/skills](https://github.com/mattpocock/skills) | Matt Pocock | MIT | `3cca18b` (2026-09-04) |
+| [writing-shape](skills/writing-shape) | Exploit: pick an opening, grow the article block by block, ground every concept first | [mattpocock/skills](https://github.com/mattpocock/skills) | Matt Pocock | MIT | `3cca18b` (2026-09-04) |
+
+How they chain: writing-fragments builds the pile, writing-shape or writing-beats turns the pile into an article, humanizer edits the result. The three Pocock skills are user-invoked only (`disable-model-invocation: true` upstream).
+
 ## Structure
 
 ```
@@ -49,4 +62,4 @@ skills/
 
 ## Credits
 
-All skills here are original unless noted in their PROVENANCE.yaml.
+Skills under "Skills" are original. Skills under "Vendored writing skills" belong to their authors, named in each directory's PROVENANCE.yaml and LICENSE.upstream.

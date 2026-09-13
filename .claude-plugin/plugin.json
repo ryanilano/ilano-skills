@@ -1,7 +1,7 @@
 {
   "name": "ilano",
-  "version": "0.1.0",
-  "description": "Original agent skills by Ryan Ilano \u2014 copyable-markdown, prompt-pack, docs-mirror, yt-cc.",
+  "version": "0.2.0",
+  "description": "Agent skills by Ryan Ilano: copyable-markdown, prompt-pack, docs-mirror, yt-cc, plus vendored writing skills (humanizer, writing-fragments, writing-beats, writing-shape) with pinned provenance.",
   "author": {
     "name": "Ryan Ilano"
   },
