@@ -43,6 +43,24 @@ platform plus `index.md`, and `.json` with `--json`.
 4. **Rate-limit and identify.** A `User-Agent` is set and calls are spaced; do
    not hammer someone's server for a profile read.
 
+## NetNewsWire cache (zero network)
+
+If NetNewsWire is already subscribed to a feed and refreshing it, the full post
+text is in a local SQLite cache — read that instead of re-fetching.
+
+```bash
+python3 scripts/nnw_export.py --list                    # every feed + cached count
+python3 scripts/nnw_export.py --feed engadget --since 2026-09-01 --out ./feeds --json
+python3 scripts/nnw_export.py --all --out ./feeds       # everything (large)
+```
+
+Reads `~/Library/Containers/com.ranchero.NetNewsWire-Evergreen/.../Accounts/*/DB.sqlite3`
+read-only (safe while NNW is open), maps feed IDs to titles via the account OPML,
+prefers `contentHTML`→text. **Redacts secrets** (`?key=`/`token=`/… query params)
+from every feed URL in output, so a private feed key never leaks. Prefer this
+over live RSS for any feed you already subscribe to — it's free and offline.
+
 ## Requirements
 
-`python3`, standard library only.
+`python3`, standard library only. macOS for the NetNewsWire reader (path is
+NNW's macOS container).
