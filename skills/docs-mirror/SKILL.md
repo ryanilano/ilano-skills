@@ -15,7 +15,7 @@ It prints the output directory on the last line. Read `README.md` there first (e
 
 | Flag | Use |
 |---|---|
-| `--out DIR` | where to write. Default `<host>-docs`, or `<host>-feed` in feed mode |
+| `--out DIR` | where to write. Default `~/Dropbox/_docs-mirror/<host>-docs` (or `<host>-feed` in feed mode) — keeps mirrors off local-only disk. Override the base dir with the `DOCS_MIRROR_BASE` env var |
 | `--only TEXT` | only URLs (docs mode) or titles (feed mode) containing TEXT |
 | `--jobs N` | parallel requests, default 8 |
 | `--cap N` | max pages/entries, default 400 |

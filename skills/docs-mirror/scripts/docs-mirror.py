@@ -38,6 +38,7 @@ import concurrent.futures as cf
 import hashlib
 import html
 import json
+import os
 import re
 import sys
 import threading
@@ -545,13 +546,15 @@ def main() -> int:
         if not feed_url:
             print("no feed found; falling back to sitemap/crawl", file=sys.stderr)
 
+    base = Path(os.environ.get("DOCS_MIRROR_BASE") or (Path.home() / "Dropbox" / "_docs-mirror"))
+    base.mkdir(parents=True, exist_ok=True)
     if feed_url:
-        out = a.out or Path(urllib.parse.urlsplit(feed_url).netloc.replace(".", "-") + "-feed")
+        out = a.out or (base / (urllib.parse.urlsplit(feed_url).netloc.replace(".", "-") + "-feed"))
         print(f"mirroring feed {feed_url} …", file=sys.stderr)
         return mirror_feed(feed_url, out, a.jobs, a.only, a.cap, rp)
 
     # ---- docs path -------------------------------------------------------
-    out = a.out or Path(urllib.parse.urlsplit(start).netloc.replace(".", "-") + "-docs")
+    out = a.out or (base / (urllib.parse.urlsplit(start).netloc.replace(".", "-") + "-docs"))
     print(f"discovering under {prefix} …", file=sys.stderr)
     urls = from_sitemap(start, prefix)
     how = "sitemap"
