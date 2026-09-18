@@ -1,0 +1,21 @@
+origin: vendored
+author: Matt Pocock
+license: MIT
+upstream_repo: https://github.com/mattpocock/skills
+upstream_sha: 74ca5fe077456a0b3b2f5310cf9430999fd0b5fd
+upstream_path: skills/productivity/writing-for-agents
+upstream_url: https://github.com/mattpocock/skills/blob/74ca5fe077456a0b3b2f5310cf9430999fd0b5fd/skills/productivity/writing-for-agents/SKILL.md
+fetched: 2026-09-18T03:05Z
+note: >-
+  Byte-identical copy of the upstream directory at the pinned commit
+  (2026-09-17, "Removed HTML artifact section"). The reference every skill in
+  this repo is written and pruned against: context pointers, the two loads,
+  information hierarchy, completion criteria, leading words, pruning.
+  SKILL-MECHANICS.md is the skill-only branch (frontmatter, model- vs
+  user-invoked, router skills). Model-invoked upstream: it fires when a skill,
+  AGENTS.md or CLAUDE.md is being created or edited. Docs page:
+  https://www.aihero.dev/skills-writing-for-agents. Read in full on 2026-09-17
+  before vendoring; the same day every original skill here was audited against it.
+related:
+  - AGENTS.md in this repo points at this skill as the authoring reference
+  - writing-fragments, writing-beats, writing-shape (same author, vendored here) are for prose; this one is for documents agents read

@@ -15,6 +15,7 @@ when the feed ships a summary.
 
     docs-mirror https://example.com/docs
     docs-mirror https://example.com/docs --out ~/docs/example
+    DOCS_MIRROR_BASE=~/Dropbox/_docs-mirror docs-mirror https://example.com/docs
     docs-mirror https://example.com/docs --only reference --jobs 12
     docs-mirror https://blog.example.com/index.xml          # feed, auto-detected
     docs-mirror https://blog.example.com --feed             # find the feed for me
@@ -38,6 +39,7 @@ import concurrent.futures as cf
 import hashlib
 import html
 import json
+import os
 import re
 import sys
 import threading
@@ -508,6 +510,26 @@ def mirror_feed(feed_url: str, out: Path, jobs: int, only: str | None,
     return 0 if written or skipped else 1
 
 
+def mirror_base(explicit: bool) -> Path:
+    """Where mirrors land when --out is not given.
+
+    Order: $DOCS_MIRROR_BASE, then $XDG_DATA_HOME/docs-mirror, then
+    ~/.local/share/docs-mirror. The XDG fallback works on any machine; the
+    env var is how you point mirrors at a synced folder (Dropbox, Syncthing)
+    so every machine and agent reads the same copy. Hint once when neither
+    --out nor the env var is set, so the choice is visible, not silent.
+    """
+    env = os.environ.get("DOCS_MIRROR_BASE")
+    if env:
+        return Path(env).expanduser()
+    xdg = os.environ.get("XDG_DATA_HOME")
+    base = (Path(xdg).expanduser() if xdg else Path.home() / ".local" / "share") / "docs-mirror"
+    if not explicit:
+        print(f"writing under {base} (set DOCS_MIRROR_BASE to a synced folder to share mirrors "
+              "across machines)", file=sys.stderr)
+    return base
+
+
 def main() -> int:
     global _DELAY
     ap = argparse.ArgumentParser()
@@ -545,13 +567,15 @@ def main() -> int:
         if not feed_url:
             print("no feed found; falling back to sitemap/crawl", file=sys.stderr)
 
+    base = mirror_base(explicit=a.out is not None)
+    base.mkdir(parents=True, exist_ok=True)
     if feed_url:
-        out = a.out or Path(urllib.parse.urlsplit(feed_url).netloc.replace(".", "-") + "-feed")
+        out = a.out or (base / (urllib.parse.urlsplit(feed_url).netloc.replace(".", "-") + "-feed"))
         print(f"mirroring feed {feed_url} …", file=sys.stderr)
         return mirror_feed(feed_url, out, a.jobs, a.only, a.cap, rp)
 
     # ---- docs path -------------------------------------------------------
-    out = a.out or Path(urllib.parse.urlsplit(start).netloc.replace(".", "-") + "-docs")
+    out = a.out or (base / (urllib.parse.urlsplit(start).netloc.replace(".", "-") + "-docs"))
     print(f"discovering under {prefix} …", file=sys.stderr)
     urls = from_sitemap(start, prefix)
     how = "sitemap"

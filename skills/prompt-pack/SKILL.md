@@ -1,6 +1,6 @@
 ---
 name: prompt-pack
-description: Compress a free-form, conversational task description into a structured, token-efficient prompt ready to paste into an agentic coding tool (Claude Code, Cline, or similar). Use this whenever the user has described a coding or repo task loosely and wants it turned into a clean agent prompt — triggers include "make this into a prompt," "pack this for Cline/Claude Code," "turn this into an agent task," "tighten this prompt," or any time the user dumps a rambling task description and wants the executable core extracted. Also use proactively when a user's request is clearly destined for another agent rather than for you to execute directly.
+description: Compress a loose task description into a structured prompt for a different coding agent (Claude Code, Cline, or similar) to run. Use when the user asks to turn a task into a prompt, pack it, or tighten it, and when a request is clearly destined for another agent rather than for you to execute.
 ---
 
 # Prompt Pack

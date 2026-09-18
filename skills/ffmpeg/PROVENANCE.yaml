@@ -1,0 +1,19 @@
+origin: fork
+author: MastroMimmo
+license: MIT
+upstream_repo: https://github.com/MastroMimmo/ffmpeg-skill
+upstream_sha: ce2750ebcc39dac703fd1648a100f5574f1febeb
+upstream_path: .
+upstream_url: https://github.com/MastroMimmo/ffmpeg-skill/blob/ce2750ebcc39dac703fd1648a100f5574f1febeb/ffmpeg.md
+fetched: 2026-09-18T04:05Z
+note: >-
+  scripts/fftools.py is byte-identical to upstream at the pinned commit
+  (2026-03-16, "Initial release"). The skill text is rewritten against
+  writing-for-agents; nothing the script does changed. Pairs with yt-cc:
+  `yt-cc <url> --video` leaves video.mp4 in the store, and this cuts,
+  thumbnails or GIFs it.
+modifications:
+  - SKILL.md rewritten. Steps first (probe, operate, verify, show); the 18-command catalogue, raw ffmpeg recipes, CRF and container tables moved to references/commands.md
+  - Script path is scripts/fftools.py relative to the skill directory instead of ~/ffmpeg-skill/scripts/fftools.py
+  - Description shortened to what it does plus one trigger per branch
+  - Upstream ffmpeg.md and README.md not carried; LICENSE carried as LICENSE.upstream

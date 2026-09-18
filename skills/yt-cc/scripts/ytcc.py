@@ -1,14 +1,27 @@
 #!/usr/bin/env python3
 """yt-cc: transcript-first video board + CLI. Portable (macOS/Linux/WSL), stdlib only.
 
-Two modes, one file:
-  ytcc.py                 -> web dashboard on $YTCC_HOST:$YTCC_PORT (default 127.0.0.1:8091)
-  ytcc.py <url> [--video] -> headless grab; prints the saved transcript.md path to stdout
+Three modes, one file:
+  ytcc.py <url>                  one video: captions + description + metadata;
+                                 prints the saved transcript.md path to stdout
+  ytcc.py <channel-or-playlist>  every video on it, newest first, skipping ones
+                                 already in the store; prints the store path
+  ytcc.py serve                  web board on $YTCC_HOST:$YTCC_PORT (127.0.0.1:8091)
 
-Captions via yt-dlp (no video download unless --video / +video). Store is XDG-based and
-configurable ($YTCC_STORE). Front the server with `tailscale serve` for phone/tablet access.
+A /@handle, /channel/, /c/, /user/, /playlist or list= URL is taken as a
+collection automatically. Flags:
+  --channel, --all     force collection mode (a watch?v=...&list=... link)
+  -n N, --limit N      newest N only. Use it the first time on an unknown channel
+  --delay S            seconds between videos in collection mode (default 1.5)
+  --video, -v          also download the mp4 (slow, large)
+  -d DIR, --dir DIR    write to DIR instead of the store
 
-Env: YTCC_STORE, YTCC_HOST, YTCC_PORT, YTCC_COOKIES_BROWSER (chrome/safari/brave -> fixes 403).
+Every grab saves the video description, upload date, view count, tags and
+chapters. A video with no English captions still gets its description and
+metadata saved; the transcript is simply absent.
+
+Env: YTCC_STORE (default $XDG_DATA_HOME/yt-cc), YTCC_HOST, YTCC_PORT,
+     YTCC_COOKIES_BROWSER (chrome/safari/brave -> fixes 403 on video download).
 Needs: python3 + yt-dlp (PATH or `python3 -m yt_dlp`).
 """
 import html
@@ -89,10 +102,33 @@ def parse_vtt(path):
     return cues
 
 
+def _mmss(secs):
+    secs = int(secs or 0)
+    return f"{secs // 60:02d}:{secs % 60:02d}"
+
+
 def to_markdown(meta, cues):
+    """transcript.md: header, description, chapters, then the captions.
+
+    The description goes first because it is often the easy win: links, the
+    tool list, the sponsor, the correction the creator pinned. A reader who
+    only needs those never has to scroll the transcript.
+    """
+    up = str(meta.get("upload_date") or "")
+    when = f"{up[0:4]}-{up[4:6]}-{up[6:8]}" if len(up) == 8 and up.isdigit() else "?"
     lines = [f"# {meta['title']}", "",
-             f"Channel: {meta.get('channel', '?')} · Duration: {meta.get('duration_string', '?')} · {meta['url']}",
+             f"Channel: {meta.get('channel', '?')} · Duration: {meta.get('duration_string', '?')} · Published: {when} · {meta['url']}",
              f"Grabbed: {meta['grabbed']} · Source: {meta['sub_source']}", ""]
+    desc = (meta.get("description") or "").strip()
+    if desc:
+        lines += ["## Description", "", desc, ""]
+    chapters = meta.get("chapters") or []
+    if chapters:
+        lines += ["## Chapters", ""]
+        lines += [f"- **[{_mmss(c['t'])}]** {c['title']}" for c in chapters]
+        lines.append("")
+    if cues:
+        lines += ["## Transcript", ""]
     mark = -60
     for start, text in cues:
         if start - mark >= 60:
@@ -125,18 +161,26 @@ def grab(url, want_video=False):
         cues = parse_vtt(vtts[0])
     else:
         src, cues = "no captions", []
-    if not vtts and not want_video:
-        return {"error": "no English captions on this video, and video not requested. "
-                         "Add --video to save the file anyway, or use ASR."}
 
+    # Everything yt-dlp already handed back in that one -J call. The
+    # description is the point: it carries the links, the tool list, the
+    # pinned correction. Chapters give a table of contents for free.
     meta = {"id": vid, "title": info.get("title", vid),
             "channel": info.get("channel") or info.get("uploader", "?"),
             "duration_string": info.get("duration_string", "?"),
             "url": info.get("webpage_url", url),
+            "upload_date": info.get("upload_date") or "",
+            "view_count": info.get("view_count"),
+            "like_count": info.get("like_count"),
+            "tags": (info.get("tags") or [])[:30],
+            "description": (info.get("description") or "").strip(),
+            "chapters": [{"t": int(c.get("start_time") or 0), "title": c.get("title", "")}
+                         for c in (info.get("chapters") or [])],
             "grabbed": time.strftime("%Y-%m-%d %H:%M"),
             "sub_source": src, "cue_count": len(cues)}
-    if cues:
-        (d / "transcript.md").write_text(to_markdown(meta, cues))
+    # Written even with no captions: a description and its links are worth
+    # having, and the Source line says plainly that the transcript is absent.
+    (d / "transcript.md").write_text(to_markdown(meta, cues))
     transcript_payload = {"cues": [{"t": round(t, 1), "text": x} for t, x in cues]}
     if want_video and not list(d.glob("video.*")):
         cmd = YTDLP + ["--no-playlist", "-f", "bv*+ba/b",
@@ -161,6 +205,184 @@ def grab(url, want_video=False):
     (d / "transcript.json").write_text(json.dumps({"meta": meta, **transcript_payload}, indent=1))
     (d / "meta.json").write_text(json.dumps(meta, indent=1))
     return meta
+
+
+# ---------------------------------------------------------------------------
+# Whole-channel mode
+#
+# Everything above this line handles exactly one video. `grab()` passes
+# --no-playlist to yt-dlp on every call, which is the correct behaviour for a
+# single URL: if you paste a link that happens to sit inside a playlist, you
+# want that one video, not the other four hundred.
+#
+# The side effect was that there was no way at all to say "take this entire
+# channel". That single flag was the whole distance between this skill and a
+# backlog of a few thousand Theo or Wendell videos.
+#
+# The three functions below add that, in the order they run:
+#
+#   looks_multi()       Is this URL a channel, or one video?
+#   enumerate_videos()  Ask YouTube for the list of video IDs. One request.
+#   grab_many()         Loop that list through the existing grab(), politely.
+#
+# Nothing above this line changed, so a single-video grab behaves exactly as
+# it always did.
+# ---------------------------------------------------------------------------
+
+# Substrings that only ever appear in a URL pointing at a COLLECTION of videos.
+#   /@handle      the modern channel URL, e.g. youtube.com/@t3dotgg
+#   /channel/UC…  the old channel URL, still used everywhere
+#   /c/, /user/   two older channel URL styles YouTube never removed
+#   /playlist     an explicit playlist page
+#   list=         a playlist ID riding along in the query string
+MULTI_HINTS = ("/@", "/channel/", "/playlist", "/c/", "/user/", "list=")
+
+
+def looks_multi(url):
+    """Decide whether a URL means one video or many.
+
+    Returns True for a channel or playlist, False for a single video. This is
+    what lets you paste either kind of link and have the right thing happen
+    without passing a flag.
+
+    The one genuinely ambiguous case is a URL like:
+
+        youtube.com/watch?v=abc123&list=PLxyz
+
+    which is a single video that YouTube happens to be showing you from inside
+    a playlist. There is no universally right answer, so the rule here is: a
+    bare watch?v= link is one video, but if a list= is attached, treat it as
+    the playlist. Pass --channel to force multi mode either way.
+    """
+    u = url.lower()
+
+    # A plain watch link with no playlist attached is unambiguously one video.
+    if "watch?v=" in u and "list=" not in u:
+        return False
+
+    return any(h in u for h in MULTI_HINTS)
+
+
+def enumerate_videos(url, limit=None):
+    """Ask YouTube which videos are on a channel or playlist.
+
+    Returns (videos, error). `videos` is a list of dicts with id, title and
+    url, newest first. `error` is None on success, or a string to show the
+    user. Returning both rather than raising keeps this consistent with
+    grab(), which also reports failure as data.
+
+    The important flag is --flat-playlist. Without it, yt-dlp visits every
+    single video to collect its full metadata, so listing a 2,000 video
+    channel would cost 2,000 requests before a single transcript is fetched.
+    With it, YouTube hands back the whole listing in ONE request, containing
+    just enough per video (id and title) to do the work.
+
+    --ignore-errors means one dead or private video in the middle of a channel
+    does not abort the entire listing.
+    """
+    # A bare channel URL (youtube.com/@handle) lists the channel's TABS
+    # (Videos, Shorts, Live) as nested playlists, not its videos. Point at
+    # the Videos tab unless the caller already named a tab or a playlist.
+    u = url.rstrip("/")
+    if (any(h in u for h in ("/@", "/channel/", "/c/", "/user/"))
+            and "list=" not in u
+            and not u.endswith(("/videos", "/shorts", "/streams", "/live", "/playlists"))):
+        url = u + "/videos"
+
+    cmd = YTDLP + ["-J", "--flat-playlist", "--ignore-errors"]
+
+    # --playlist-end is yt-dlp's "stop after N", applied while listing rather
+    # than after, so a --limit 5 really is a small request.
+    if limit:
+        cmd += ["--playlist-end", str(limit)]
+
+    # 600s because listing a very large channel genuinely can take minutes,
+    # unlike a single video grab which uses the default 180s.
+    j = run(cmd + [url], timeout=600)
+
+    # --ignore-errors makes yt-dlp exit non-zero when it skipped something,
+    # even though the listing itself succeeded. So only treat a non-zero exit
+    # as fatal when there is also no output to parse.
+    if j.returncode != 0 and not j.stdout.strip():
+        return [], (j.stderr or "yt-dlp failed to list").strip()[-400:]
+
+    try:
+        info = json.loads(j.stdout)
+    except json.JSONDecodeError as exc:
+        return [], f"could not parse listing: {exc}"
+
+    out = []
+    for e in info.get("entries") or []:
+        # Skipped or unavailable videos come back as null entries.
+        if not e:
+            continue
+        vid = e.get("id")
+        if vid:
+            out.append({
+                "id": vid,
+                "title": e.get("title", vid),
+                # Flat listings sometimes omit the full URL, so rebuild it from
+                # the id. grab() needs a real watch URL, not a bare id.
+                "url": e.get("url") or f"https://www.youtube.com/watch?v={vid}",
+            })
+    return out, None
+
+
+def grab_many(url, want_video=False, limit=None, delay=1.5):
+    """Grab every video in a channel or playlist.
+
+    Returns a summary dict: how many were listed, grabbed, skipped and failed,
+    plus the failures themselves so nothing disappears silently.
+
+    Two design choices worth knowing about:
+
+    SAFE TO RE-RUN. Before fetching anything, this checks whether that video
+    already has a transcript.json on disk and skips it if so. Running this
+    again next week costs one listing request plus whatever is new, so it can
+    go on a schedule without re-downloading a backlog every time.
+
+    DELIBERATELY SLOW. `delay` pauses between videos. Running a full channel
+    is thousands of requests to somebody else's servers, and the difference
+    between 1.5s and 0s is the difference between a polite backlog fetch and
+    getting the IP rate-limited halfway through.
+
+    One failure never stops the run. A video with no English captions is
+    counted, reported at the end, and the loop moves on.
+    """
+    vids, err = enumerate_videos(url, limit)
+    if err:
+        return {"error": err}
+    if not vids:
+        return {"error": f"no videos found at {url}"}
+
+    done = skipped = failed = 0
+    failures = []
+
+    # Progress goes to stderr so stdout stays clean for the final path, which
+    # is the repo convention: status to stderr, data to stdout.
+    print(f"yt-cc: {len(vids)} video(s) listed", file=sys.stderr)
+
+    for n, v in enumerate(vids, 1):
+        # The skip check. transcript.json is written last by grab(), so its
+        # presence means that video finished cleanly rather than half-wrote.
+        if (STORE / v["id"] / "transcript.json").exists():
+            skipped += 1
+            continue
+
+        # Reuse the existing single-video path rather than duplicating it, so
+        # channel mode and single mode can never drift apart.
+        r = grab(v["url"], want_video)
+
+        if "error" in r:
+            failed += 1
+            failures.append((v["id"], r["error"][:120]))
+            print(f"  [{n}/{len(vids)}] FAIL {v['id']}: {r['error'][:90]}", file=sys.stderr)
+        else:
+            done += 1
+            print(f"  [{n}/{len(vids)}] {r['title'][:70]} ({r['cue_count']} cues)", file=sys.stderr)
+        time.sleep(delay)
+    return {"listed": len(vids), "grabbed": done, "skipped": skipped,
+            "failed": failed, "failures": failures}
 
 
 def cards():
@@ -1021,22 +1243,78 @@ def cli_grab(url, want_video):
     if "error" in r:
         print("yt-cc: " + r["error"], file=sys.stderr)
         return 1
-    md = STORE / r["id"] / "transcript.md"
-    print(md if md.exists() else STORE / r["id"] / "transcript.json")
-    print(f"grabbed: {r['title']} ({r['cue_count']} cues, {r['sub_source']})", file=sys.stderr)
+    print(STORE / r["id"] / "transcript.md")
+    note = "; description and metadata saved, no transcript" if not r["cue_count"] else ""
+    print(f"grabbed: {r['title']} ({r['cue_count']} cues, {r['sub_source']}{note})", file=sys.stderr)
     return 0
+
+
+def cli_grab_many(url, want_video, limit, delay):
+    """Command-line wrapper around grab_many: run it, then print the summary.
+
+    Mirrors cli_grab above. The summary and any failures go to stderr, and the
+    store directory goes to stdout, so `ytcc.py <channel> | xargs ...` still
+    gets a clean path to work with.
+    """
+    r = grab_many(url, want_video, limit, delay)
+    if "error" in r:
+        print("yt-cc: " + r["error"], file=sys.stderr)
+        return 1
+
+    print(f"listed {r['listed']}, grabbed {r['grabbed']}, "
+          f"already had {r['skipped']}, failed {r['failed']}", file=sys.stderr)
+
+    # Show the first ten failures rather than all of them. On a 2,000 video
+    # channel a handful with no English captions is normal and a full dump
+    # would bury the summary line.
+    for vid, why in r["failures"][:10]:
+        print(f"  failed {vid}: {why}", file=sys.stderr)
+
+    print(STORE)
+
+    # Exit 0 if anything is on disk for this channel, including videos that
+    # were already there. A re-run that grabs nothing new is a success, not a
+    # failure, which matters if this is wired into a scheduled job.
+    return 0 if r["grabbed"] or r["skipped"] else 1
 
 
 def main(argv):
     want_video = False
     serve = False
     url = None
+    limit = None
+    delay = 1.5
+    force_many = False
     global STORE
     i = 1
     while i < len(argv):
         a = argv[i]
         if a in ("--video", "-v", "+video"):
             want_video = True
+        # Force whole-channel mode even when the URL looks like one video.
+        # Useful for a watch?v=…&list=… link where you really do want the
+        # whole playlist and do not want to rely on looks_multi guessing.
+        elif a in ("--channel", "--playlist", "--all"):
+            force_many = True
+
+        # --limit 25 / -n 25: only take the newest N. Always use this the
+        # first time you point at an unfamiliar channel, so you find out it
+        # has 3,000 videos before you start fetching all 3,000.
+        elif a in ("-n", "--limit"):
+            nxt = argv[i + 1] if i + 1 < len(argv) else ""
+            if nxt.isdigit():
+                limit = int(nxt)
+                i += 1  # consume the number as well as the flag
+
+        # --delay 3: seconds to wait between videos. Raise it if YouTube
+        # starts rate-limiting you partway through a large backlog.
+        elif a == "--delay":
+            nxt = argv[i + 1] if i + 1 < len(argv) else ""
+            try:
+                delay = float(nxt)
+                i += 1
+            except ValueError:
+                pass  # a bad number just leaves the default in place
         elif a in ("-h", "--help", "help"):
             print(__doc__)
             return 0
@@ -1057,6 +1335,11 @@ def main(argv):
         i += 1
 
     if url and not serve:
+        # The fork in the road. A channel or playlist URL goes to the multi
+        # path; anything else keeps the original one-video behaviour. You can
+        # paste either kind of link and not think about it.
+        if force_many or looks_multi(url):
+            return cli_grab_many(url, want_video, limit, delay)
         return cli_grab(url, want_video)
 
     if YTDLP is None:

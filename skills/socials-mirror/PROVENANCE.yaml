@@ -1,0 +1,10 @@
+origin: original
+author: Ryan Ilano
+note: >-
+  Bundles scripts/socials_mirror.py, a public-only social snapshot tool written
+  against the Python 3 standard library. Pulls GitHub (public REST), BlueSky
+  (public AppView XRPC), and any RSS/Atom feed (Reddit .rss, blogs, bridges) into
+  per-platform markdown + optional JSON. Friendly and public-only by design: no
+  login, no auth circumvention, no scraping of logged-in content, no monitoring
+  loop. X/Twitter and LinkedIn are recorded as links, not scraped. Sibling to
+  docs-mirror; same scrape-kindly ethos (User-Agent, rate-limit).

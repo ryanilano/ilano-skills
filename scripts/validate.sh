@@ -3,6 +3,7 @@
 #   - every skill has PROVENANCE.yaml with a known origin
 #   - origin: fork    -> LICENSE.upstream present, modifications list non-empty
 #   - origin: vendored -> content matches upstream at the pinned SHA
+#   - origin: reimplemented-technique -> original code, credited technique; no upstream to diff
 # Status to stderr; JSON summary to stdout. Exits non-zero on any failure.
 set -euo pipefail
 
@@ -39,7 +40,7 @@ for dir in "$ROOT"/skills/*/; do
 
   origin="$(yaml_get "$prov" origin)"
   case "$origin" in
-    original)
+    original|reimplemented-technique)
       ;;
     fork)
       if [ ! -f "$dir/LICENSE.upstream" ]; then
@@ -59,7 +60,7 @@ for dir in "$ROOT"/skills/*/; do
       fail "$skill: PROVENANCE.yaml has no origin field"
       ;;
     *)
-      fail "$skill: unknown origin '$origin' (expected original | vendored | fork)"
+      fail "$skill: unknown origin '$origin' (expected original | vendored | fork | reimplemented-technique)"
       ;;
   esac
 done
