@@ -17,7 +17,8 @@ skills/
 ## SKILL.md format
 
 - YAML frontmatter with `name` (must match the directory name) and `description`.
-- The description states what the skill does and when to use it — include the trigger phrases users actually type.
+- Write and prune every SKILL.md against `skills/writing-for-agents/SKILL.md` (and its `SKILL-MECHANICS.md` for frontmatter and the invocation choice). The description is a context pointer loaded every turn: what the skill does, one trigger per branch, no identity the body already carries.
+- A skill only ever fired by a typed slash command gets `disable-model-invocation: true` so its description costs nothing.
 
 ## Context efficiency
 
@@ -33,7 +34,7 @@ skills/
 
 ## Provenance
 
-- Every skill directory has a `PROVENANCE.yaml` with `origin: original | vendored | fork`.
+- Every skill directory has a `PROVENANCE.yaml` with `origin: original | vendored | fork | reimplemented-technique`.
 - Vendored and forked skills pin their source: `upstream_repo`, `upstream_sha`, `upstream_path`.
 - Forks also add a `LICENSE.upstream` file and a non-empty `modifications` list.
 - Run `scripts/validate.sh` before every commit.

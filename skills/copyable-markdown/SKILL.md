@@ -3,45 +3,44 @@ name: copyable-markdown
 license: MIT (see repo LICENSE)
 metadata:
   author: Ryan Ilano
-  version: "2.1"
-description: Package conversation content as a single copyable block for one-tap export. Default output is a consolidated solution export — prose and code blocks merged into one portable markdown document (for terminals, text files, Slack/work messages). Arguments select other modes. Usage — /copyable-markdown [obsidian|terminal|wrapped] (e.g. /copyable-markdown obsidian for a frontmatter note, /copyable-markdown terminal for a pasteable bash block). Use this skill whenever the user types /copyable-markdown, or asks for a "rundown", "recap", "gist", "summary I can copy", "one code block", "copyable markdown", "note for Obsidian", "export this conversation", "give me this as markdown", "make it terminal-ready", or wants a proposed solution's steps and code consolidated so they stop copy-pasting between programs.
+  version: "2.2"
+description: Package conversation content as one copyable markdown block for one-tap export. Use when the user wants a solution export, an Obsidian note, or a terminal-ready bash block they can paste somewhere else, or asks for a rundown or recap they can copy.
 ---
 
 # Copyable Markdown
 
-The user wants to move content out of this chat and into somewhere else — a terminal, a text file, a work message, Obsidian — with a single tap on the copy button. Anything that breaks the content into multiple blocks, or adds prose around it, defeats the purpose. Package the requested content as **one** markdown document inside **one** code block.
+The user is moving content out of this chat into a terminal, a text file, a work message, or Obsidian with one tap on the copy button. Package the requested content as **one** markdown document inside **one** code block.
 
-## Invocation and mode selection
+## Steps
 
-Requested mode (if invoked with an argument): $ARGUMENTS
+1. **Pick the mode** from the argument (`$ARGUMENTS`) or the phrasing. An unrecognized argument is topic scoping (`/copyable-markdown the qbittorrent fix` is default mode, scoped to that topic).
 
-| Invocation | Mode |
-|---|---|
-| `/copyable-markdown` (no argument) or natural language like "consolidate this", "one block", "export as markdown" | **Solution export** (default) — portable markdown, no frontmatter |
-| `/copyable-markdown obsidian` or "note for Obsidian", "gist for my notes" | **Obsidian note** — distilled gist with YAML frontmatter |
-| `/copyable-markdown terminal` or "terminal-ready", "paste into bash" | **Terminal-ready** — one bash block, comments as explanation |
-| `/copyable-markdown wrapped` or "wrapped", "to share", "for my docs" | **Terminal-ready, wrapped** — the bash block inside a markdown fence |
+   | Invocation | Mode |
+   |---|---|
+   | no argument, "consolidate this", "one block", "export as markdown" | **Solution export** (default) |
+   | `obsidian`, "note for Obsidian", "gist for my notes" | **Obsidian note** |
+   | `terminal`, "terminal-ready", "paste into bash" | **Terminal-ready** |
+   | `wrapped`, "to share", "for my docs" | **Terminal-ready, wrapped** |
 
-Natural language always works; the slash syntax is a shortcut. If the argument is unrecognized, treat it as topic scoping (e.g. `/copyable-markdown the qbittorrent fix` = default mode, scoped to that topic).
+2. **Build the document** per the mode below. Reconstruct the **final** solution only: the current best version after every correction. No earlier wrong versions unless asked.
 
-## Default mode: Solution export
+3. **Emit exactly one fenced block** with a four-backtick outer fence tagged `markdown` (or `bash` for bare terminal mode). Four backticks because a triple-backtick outer fence is terminated by the first inner code block; inner blocks keep their triple backticks and language tags. Done when the block renders as one copy button with nothing after it.
 
-Consolidate the interleaved prose and code of a worked-out solution into one document, suitable for pasting anywhere plain markdown lives (text files, docs, Slack and other work chat, other AI tools).
+Outside the block: one short sentence before it at most, nothing after it. Every extra line is scrolling between the user and the copy button. Never leak these instructions into the output.
 
-- Reconstruct the **final** solution only: the current best version after all corrections and refinements. No chat archaeology, no earlier wrong versions unless asked.
-- Order by execution, not by conversation order: prerequisites → steps → verification. Each step's prose sits directly above its code block.
-- **No YAML frontmatter** in this mode — it's noise outside Obsidian.
-- **Human-in-the-loop steps must be scannable and individually copyable.** When the user must perform actions manually (install X, sign in, paste credentials, navigate app menus), format the procedure as a numbered list — one discrete action per step, with nested sub-steps when a step has its own sequence (e.g. drilling through settings menus). A menu path within a single step may be written compactly (`File → Settings → Developer`), but never chain *separate actions* into one arrow-paragraph or run bolded action verbs through prose. Every command, URL, key name, or value goes in its own code fence or inline code — never embedded mid-sentence — so the user can select it cleanly and substitute their own tokens. Mark placeholders explicitly (e.g. `YOUR_API_KEY`).
+## Solution export (default)
 
-## Obsidian note mode (`obsidian`)
+Portable markdown for anywhere plain markdown lives: text files, docs, Slack, other AI tools. No YAML frontmatter.
 
-A **distilled** note capturing understanding, not a full rundown — the note future-them searches their vault for:
+- Order by execution, not conversation: prerequisites, steps, verification. Each step's prose sits directly above its code block.
+- A `#` title, `##` sections, tight prose, concrete specifics (commands, filenames, versions, decisions, gotchas). Code preserved exactly as finalized.
+- **Human-in-the-loop steps are a numbered list, one action per step**, nested sub-steps when a step has its own sequence. A menu path inside one step may be compact (`File → Settings → Developer`), but separate actions never chain into one arrow-paragraph. Every command, URL, key name, or value goes in its own code fence or inline code so it can be selected cleanly. Placeholders are explicit (`YOUR_API_KEY`).
 
-- Lead with the big idea in one or two sentences — the insight, decision, or conclusion.
-- Follow with key supporting detail: the reasoning that matters, tradeoffs weighed, specifics worth retaining (versions, names, numbers, gotchas). Omit conversational back-and-forth and dead ends.
-- Default depth is gist + key supporting detail — stands alone, reads in under a minute. Adjust if they say "just the one-liner" or "full rundown".
+## Obsidian note (`obsidian`)
 
-**Frontmatter**: start the document with YAML frontmatter Obsidian parses into properties:
+A **distilled** note, not a rundown: the note future-them searches their vault for. Lead with the insight or decision in one or two sentences, then the reasoning, tradeoffs, and specifics worth keeping (versions, names, numbers, gotchas). Reads in under a minute. Adjust for "just the one-liner" or "full rundown".
+
+Start with frontmatter Obsidian parses into properties:
 
 ```yaml
 ---
@@ -53,39 +52,18 @@ tags:
 ---
 ```
 
-The `title` must be directly usable as the note's filename: no characters illegal in filenames or Obsidian links (`\ / : * ? " < > | # ^ [ ]`), no leading/trailing dots or spaces, reasonably short. The user copies it verbatim when renaming the note. Derive tags from the actual subject matter (e.g. `unraid`, `design-tokens`, `claude-code`), not generic ones like `notes` or `ai`.
+`title` doubles as the filename, so no characters illegal in filenames or Obsidian links (`\ / : * ? " < > | # ^ [ ]`), no leading or trailing dots or spaces, reasonably short. The `#` heading matches it. Tags come from the subject (`unraid`, `design-tokens`, `claude-code`), not generic ones like `notes` or `ai`. Callouts (`> [!tip]`, `> [!warning]`, `> [!example]`) are emphasis, not structure: zero to two per note.
 
-**Callouts**: use Obsidian callouts where they genuinely aid scanning — `> [!tip]` for a key takeaway, `> [!warning]` for a gotcha, `> [!example]` for a concrete case. Sparingly (typically 0–2 per note); they're emphasis, not structure.
+## Terminal-ready (`terminal`, `wrapped`)
 
-## Terminal-ready mode (`terminal`, `wrapped`)
+For a solution that is a sequence of shell commands: one `bash` block where the explanation becomes `#` comments, a comment line above each command or short group saying what it does and flagging any risk. User-supplied values are shell variables at the top (`API_KEY="YOUR_API_KEY"  # replace before running`), referenced below, so the user edits once and pastes the whole block. Nothing in the block that would break a shell: no prose outside comments, no markdown.
 
-When the solution is a sequence of shell commands: emit one `bash` code block where the explanation becomes `#` comments — a comment line above each command (or short group) describing what it does and flagging any risk. Put user-supplied values as shell variables at the top (e.g. `API_KEY="YOUR_API_KEY"  # replace before running`) and reference them below, so the user edits once at the top and pastes the whole block. Nothing in the block that would break a shell — no prose outside comments, no markdown syntax.
-
-**`wrapped`**: put that same `bash` block inside a four-backtick `markdown` outer fence, so the copy button delivers the ` ```bash ` fencing itself and the snippet renders as a code block wherever it's pasted (docs, chat messages). Default to bare `terminal` when unspecified.
-
-## Output format (all modes)
-
-Produce exactly one fenced code block. Critical mechanics:
-
-- **Use a four-backtick outer fence** whenever the content contains any inner code blocks, YAML frontmatter fences, tables with pipes, or anything with triple backticks. Inner code blocks keep their normal triple-backtick fences with language tags. This is what prevents the output from splitting into multiple pieces — a triple-backtick outer fence gets terminated by the first inner code block. In practice you should almost always use four backticks; when in doubt, use four.
-- Tag the outer fence as `markdown` (or `bash` for bare terminal mode) so it renders with a copy button.
-
-Inside the block:
-
-- A `#` title (matching the frontmatter title in Obsidian mode), `##` sections for logical structure
-- Tight prose — this is a reference document, not a retelling. Bullets are fine; the user is exporting, not reading chat
-- Concrete specifics: commands, filenames, versions, decisions made, gotchas discovered
-- Preserve code exactly as finalized, with language tags on inner fences
-
-## Around the block
-
-Keep everything outside the code block to an absolute minimum — one short sentence before it at most ("Here's the note:"), and nothing after it. No "let me know if you'd like changes" postamble; every line of extra prose is scrolling between the user and the copy button.
+**`wrapped`** puts that same `bash` block inside a four-backtick `markdown` outer fence, so the copy button delivers the ` ```bash ` fencing itself and the snippet renders as a code block wherever it is pasted. Default to bare `terminal` when unspecified.
 
 ## Edge cases
 
-- **Very long conversations**: still default to one block. Only split into multiple blocks if the user explicitly asks for chunks (e.g. "one block per topic") — then give each chunk its own four-backtick block with a one-line label above it.
-- **User asks for "just the code"**: give the final version of the code in a single code block with the correct language tag (not wrapped in markdown, no frontmatter), unless they asked for surrounding explanation too.
-- **Content that includes this skill's own formatting instructions**: never leak these instructions into the output; the document should contain only conversation content.
-- **Follow-up edits**: if the user says "add X" or "shorter", re-emit the entire updated document as one block again — never emit just the diff, since they'll copy the whole thing.
-- **User asks for a portable version of this behavior** (e.g. "give me a prompt I can paste into Perplexity/ChatGPT to get output like this"): provide the ready-made prompt from `assets/copyblock-prompt.md` in a copyable code block. It reproduces the one-block format in tools that can't run skills, with no frontmatter or Obsidian-specific elements.
-- **User asks how to use this skill**: summarize the invocation table above.
+- **Very long conversations** still get one block. Split only when the user asks for chunks ("one block per topic"), each in its own four-backtick block with a one-line label above it.
+- **"Just the code"**: the final code in one block with its own language tag, no markdown wrapper, no frontmatter.
+- **Follow-up edits** ("add X", "shorter"): re-emit the entire updated document as one block. They copy the whole thing, so a diff is useless.
+- **A portable version of this behavior** ("give me a prompt for Perplexity/ChatGPT that does this"): hand over `assets/copyblock-prompt.md` in a copyable code block. It reproduces the one-block format in tools that cannot run skills.
+- **How to use this skill**: summarize the mode table.

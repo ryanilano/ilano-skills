@@ -1,6 +1,6 @@
 ---
 name: yt-cc
-description: Pull a video's transcript to local markdown with one command, then read it. Captions come from yt-dlp with no video download, so a two-hour talk costs one HTTP round trip and no model tokens. Use when the user pastes a video link, asks what a video says, wants it summarized or analyzed, wants quotes pulled, or wants to check a claim someone made on video. Also serves a local web board of everything grabbed so far. Do NOT use when the answer is shown on screen rather than spoken, such as code, a diagram, a UI, or a prompt being read silently from a slide.
+description: Pull a video's captions, description and metadata to local markdown in one command, then read it; a channel or playlist URL pulls every video on it. Use when the user pastes a video or channel link, asks what a video says, or wants quotes or a claim checked against it. Also serves a local board of every transcript grabbed. Not for what is shown on screen rather than spoken (code, a diagram, a UI, a slide read silently).
 ---
 
 # yt-cc
@@ -20,9 +20,9 @@ A directory per video under the store, named by video ID:
 
 | File | What it is |
 |---|---|
-| `transcript.md` | H1, a channel/duration/URL line, a source line, then the text with `**[MM:SS]**` marks about once a minute |
+| `transcript.md` | H1, a channel/duration/published/URL line, a source line, `## Description` (the creator's own text: links, tools, corrections), `## Chapters` when the video has them, then `## Transcript` with `**[MM:SS]**` marks about once a minute |
 | `transcript.json` | the same cues as `{"t": seconds, "text": "..."}`, for programmatic use |
-| `meta.json` | title, channel, duration, url, cue count, caption source |
+| `meta.json` | title, channel, duration, url, upload_date, view_count, like_count, tags, description, chapters, cue count, caption source |
 | `thumb.jpg` | poster frame, when the extractor supplies one |
 | `video.mp4` | only with `--video` |
 
@@ -31,10 +31,26 @@ captions**, or **no captions**. Manual means a human wrote them and the text is
 worth quoting verbatim. Auto means machine captions: usable for meaning, weak on
 proper nouns and punctuation. Say which one you used when you quote it.
 
+## A whole channel or playlist
+
+```bash
+python3 scripts/ytcc.py "https://www.youtube.com/@handle" -n 25
+```
+
+A `/@handle`, `/channel/`, `/c/`, `/user/`, `/playlist` or `list=` URL is
+taken as a collection without a flag. It lists the videos in one request
+(newest first), skips any already in the store, grabs the rest 1.5 s apart,
+prints a summary to stderr and the store path to stdout. Re-running next week
+costs one listing plus whatever is new. Use `-n` the first time on an
+unfamiliar channel: find out it has 3,000 videos before fetching 3,000.
+
 ## Flags
 
 | Flag | Use |
 |---|---|
+| `-n N` (`--limit`) | newest N only, in collection mode |
+| `--channel` (`--all`) | force collection mode for a `watch?v=...&list=...` link |
+| `--delay S` | seconds between videos in collection mode. Default 1.5; raise it if YouTube starts rate-limiting |
 | `--video` (`-v`, `+video`) | also download the mp4. Slow, large, and only needed when the answer is visual |
 | `-d DIR` (`--dir`, `--store`) | write to DIR instead of the default store |
 | `serve` | run the web board instead of grabbing |
@@ -66,13 +82,15 @@ with `tailscale serve` rather than binding it to all interfaces.
 
 ## Rules
 
-1. **Never answer a video question from the page description, the title, or a
-   search result.** Run this and read the transcript. A summary of a summary is
-   not evidence.
-2. **A video with no English captions exits non-zero and writes nothing.** That
-   is a real answer, not a tool failure. Do not report the video as empty; say
-   it has no caption track. `--video` saves the file so a different tool can
-   work on it.
+1. **The saved file is the evidence.** Answer a video question from
+   `transcript.md` (its description and its captions), not from a fetch of the
+   video page, the title, or a search result.
+2. **A video with no English captions still gets its description and metadata
+   saved.** The `Source:` line says `no captions` and there is no `## Transcript`
+   section. Say so; answer from the description if it answers the question.
+   `--video` saves the file so a different tool can work on it.
+   The description is often the easy win: links, the tool list, the pinned
+   correction. Read it before the transcript.
 3. **Say which caption source you used** when you quote or make a claim from the
    text, because auto captions mishear names.
 4. **Re-running a URL is cheap.** The store is keyed by video ID and existing
