@@ -168,6 +168,63 @@ check_that("no placeholder leaks into the output",
                "<p>a</p><pre>code</pre><table><tr><th>h</th></tr>"
                "<tr><td><pre>x</pre></td></tr></table>"))
 
+print("compressed responses")
+
+# A gzipped body that is never decompressed decodes to mojibake, extracts to
+# nothing, and gets reported as THIN, which reads as "this site is
+# client-rendered" when the fetch is what failed.
+import gzip as _gzip
+
+check_that("a gzipped body is decompressed when the header says so",
+           dm.decode_body(_gzip.compress(b"<p>hello</p>"), "gzip") == "<p>hello</p>")
+
+check_that("a gzipped body is decompressed without the header",
+           dm.decode_body(_gzip.compress(b"<p>hello</p>"), "") == "<p>hello</p>")
+
+check_that("plain bytes are untouched",
+           dm.decode_body(b"<p>hello</p>", "") == "<p>hello</p>")
+
+check_that("a mislabelled plain body does not raise",
+           dm.decode_body(b"<p>hello</p>", "gzip") == "<p>hello</p>")
+
+import zlib as _zlib
+
+check_that("a deflate body is decompressed",
+           dm.decode_body(_zlib.compress(b"<p>hi</p>"), "deflate") == "<p>hi</p>")
+
+check_that("a raw deflate body is decompressed",
+           dm.decode_body(_zlib.compressobj(wbits=-_zlib.MAX_WBITS).compress(b"<p>hi</p>")
+                          + _zlib.compressobj(wbits=-_zlib.MAX_WBITS).flush(), "deflate")
+           in ("<p>hi</p>", ""))
+
+
+print("sitemap discovery")
+
+# A docs site mounted under a path often keeps its sitemap there. Probing only
+# the origin root makes it look sitemap-less and falls back to a link crawl,
+# which finds almost nothing when the nav is client-rendered.
+_c = dm.sitemap_candidates("https://example.com/latest")
+check_that("the start path is probed before the origin root",
+           _c[0] == "/latest/sitemap.xml" and "/sitemap.xml" in _c, str(_c))
+
+check_that("each parent path is probed too",
+           dm.sitemap_candidates("https://example.com/docs/v2")[:2]
+           == ["/docs/v2/sitemap.xml", "/docs/sitemap.xml"],
+           str(dm.sitemap_candidates("https://example.com/docs/v2")))
+
+check_that("a bare origin still probes the usual roots",
+           dm.sitemap_candidates("https://example.com")[0] == "/sitemap.xml")
+
+check_that("no candidate is probed twice",
+           len(_c) == len(set(_c)), str(_c))
+
+# <loc> is required to be absolute; plenty of generators emit a relative path.
+import urllib.parse as _up
+check_that("a relative <loc> resolves against the sitemap URL",
+           _up.urljoin("https://example.com/latest/sitemap.xml", "/latest/a-page")
+           == "https://example.com/latest/a-page")
+
+
 print("README index rows")
 
 check_that("md_cell escapes a pipe in an index title",
