@@ -46,8 +46,8 @@ fi
 repo="$(yaml_get "$prov" upstream_repo)"
 sha="$(yaml_get "$prov" upstream_sha)"
 path="$(yaml_get "$prov" upstream_path)"
-if [ -z "$repo" ] || [ -z "$sha" ]; then
-  echo "error: skills/$skill/PROVENANCE.yaml needs upstream_repo and upstream_sha" >&2
+if [ -z "$repo" ] || [ -z "$sha" ] || [ -z "$path" ]; then
+  echo "error: skills/$skill/PROVENANCE.yaml needs upstream_repo, upstream_sha, and upstream_path" >&2
   exit 2
 fi
 
@@ -71,4 +71,4 @@ diff -ru \
   --exclude PROVENANCE.yaml \
   --exclude LICENSE.upstream \
   --exclude .git \
-  "$tmp/${path:-.}" "$ROOT/skills/$skill"
+  "$tmp/$path" "$ROOT/skills/$skill"
