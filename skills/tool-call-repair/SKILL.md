@@ -31,7 +31,7 @@ called "bad at tool calls." It's usually a harness problem, not a model problem.
 Ahmad Awais showed DeepSeek V4 Pro beat a frontier model 6/10 on internal evals
 once a repair layer handled its quirks.
 
-## The catalogue (finite, compositional, ordered)
+## The catalog (finite, compositional, ordered)
 
 | Repair | Model sent | Schema wanted |
 |---|---|---|
@@ -63,7 +63,7 @@ once a repair layer handled its quirks.
 
 ## Attribution
 
-Technique and catalogue by **Ahmad Awais (@MrAhmadAwais)**, published in the
+Technique and catalog by **Ahmad Awais (@MrAhmadAwais)**, published in the
 Command Code "Tool Call Repairs" write-up:
 https://commandcode.ai/docs/harness-engineering/tool-call-repairs
 This skill is an independent Python reimplementation of the documented method.

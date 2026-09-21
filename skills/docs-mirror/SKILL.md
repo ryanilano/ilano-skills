@@ -42,7 +42,7 @@ Measured on a 20-post engineering blog, 2026-09-07: 38,728 words, one request.
 
 Both defaults hold unless the user says otherwise:
 
-1. **robots.txt is fetched and honoured.** A disallowed start URL exits 4 and stops. In docs mode, excluded URLs are dropped from the crawl and the count is printed. A short mirror is the answer, not a reason for `--ignore-robots`.
+1. **robots.txt is fetched and honored.** A disallowed start URL exits 4 and stops. In docs mode, excluded URLs are dropped from the crawl and the count is printed. A short mirror is the answer, not a reason for `--ignore-robots`.
 2. **Requests are spaced by `--delay`, shared across workers.** The clock is global, so `--jobs 12` cannot defeat it. Raise it for a small site.
 
 ## Exit codes

@@ -24,7 +24,7 @@ Discovery order: explicit feed, feed autodiscovery (with --feed), sitemap.xml,
 then a same-prefix link crawl. Re-runs hash each response and skip unchanged
 pages, so repeating is nearly free.
 
-Scrape kindly. robots.txt is honoured by default and there is a per-request
+Scrape kindly. robots.txt is honored by default and there is a per-request
 delay. Use --ignore-robots only against a site you own.
 
 Exits non-zero and says so loudly if pages come back without prose — that is
@@ -275,7 +275,7 @@ def to_markdown(frag: str) -> str:
     s = re.sub(r"(?s)<!--.*?-->", " ", s)
 
     # Fenced code first — tags inside it must not be rewritten. Blocks are
-    # parked behind a placeholder so the whitespace normalisation at the end of
+    # parked behind a placeholder so the whitespace normalization at the end of
     # this function cannot eat their indentation, then restored verbatim.
     blocks: list[str] = []
 
