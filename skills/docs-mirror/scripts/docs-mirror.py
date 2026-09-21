@@ -36,6 +36,7 @@ from __future__ import annotations
 
 import argparse
 import concurrent.futures as cf
+import gzip
 import hashlib
 import html
 import json
@@ -49,6 +50,7 @@ import urllib.parse
 import urllib.request
 import urllib.robotparser
 import xml.etree.ElementTree as ET
+import zlib
 from email.utils import parsedate_to_datetime
 from pathlib import Path
 
@@ -76,15 +78,43 @@ def _wait_turn() -> None:
         time.sleep(slot - now)
 
 
+def decode_body(raw: bytes, encoding: str = "") -> str:
+    """Decompress a response body, then decode it as UTF-8.
+
+    Some CDNs return gzip whether or not Accept-Encoding asked for it, and
+    urllib does not decompress. Left alone, such a page decodes to mojibake,
+    extracts to nothing, and gets reported as THIN, which reads as "the site
+    is client-rendered" when the site is fine and the fetch was not. Trust
+    the gzip magic bytes over the header, since the header is the part that
+    goes missing.
+    """
+    enc = (encoding or "").strip().lower()
+    if enc == "gzip" or raw[:2] == b"\x1f\x8b":
+        try:
+            raw = gzip.decompress(raw)
+        except (OSError, zlib.error):
+            pass
+    elif enc in ("deflate", "x-deflate"):
+        for wbits in (zlib.MAX_WBITS, -zlib.MAX_WBITS):
+            try:
+                raw = zlib.decompress(raw, wbits)
+                break
+            except zlib.error:
+                continue
+    return raw.decode("utf-8", "replace")
+
+
 def get(url: str, timeout: int = 30) -> tuple[int, str, str]:
     """Returns (status, final_url, body). Never raises on HTTP errors."""
     _wait_turn()
     req = urllib.request.Request(
         url, headers={"User-Agent": UA,
-                      "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"})
+                      "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+                      "Accept-Encoding": "gzip, deflate"})
     try:
         with urllib.request.urlopen(req, timeout=timeout) as r:
-            return r.status, r.geturl(), r.read().decode("utf-8", "replace")
+            return (r.status, r.geturl(),
+                    decode_body(r.read(), r.headers.get("Content-Encoding", "")))
     except urllib.error.HTTPError as e:
         return e.code, url, ""
     except (urllib.error.URLError, OSError) as e:
@@ -213,14 +243,41 @@ def norm_date(s: str) -> str:
 # Discovery: sitemap and crawl
 # --------------------------------------------------------------------------
 
+def sitemap_candidates(base: str) -> list[str]:
+    """Paths to try, nearest the start URL first.
+
+    A docs site mounted under a path often keeps its sitemap there rather than
+    at the origin root: /latest/sitemap.xml, /docs/sitemap.xml. Probing only
+    the root makes such a site look sitemap-less and drops the crawler back to
+    following links, which on a client-rendered nav finds almost nothing.
+    """
+    path = urllib.parse.urlsplit(base).path.rstrip("/")
+    out = []
+    while path:
+        out.append(path + "/sitemap.xml")
+        path = path.rsplit("/", 1)[0]
+    out += ["/sitemap.xml", "/sitemap-0.xml", "/docs/sitemap.xml"]
+    seen, uniq = set(), []
+    for c in out:
+        if c not in seen:
+            seen.add(c)
+            uniq.append(c)
+    return uniq
+
+
 def from_sitemap(base: str, prefix: str) -> list[str]:
     root = f"{urllib.parse.urlsplit(base).scheme}://{urllib.parse.urlsplit(base).netloc}"
     urls: list[str] = []
-    for candidate in ("/sitemap.xml", "/sitemap-0.xml", "/docs/sitemap.xml"):
-        status, _, body = get(root + candidate)
+    for candidate in sitemap_candidates(base):
+        sitemap_url = root + candidate
+        status, _, body = get(sitemap_url)
         if status != 200 or "<loc>" not in body:
             continue
         for loc in re.findall(r"<loc>\s*([^<]+?)\s*</loc>", body):
+            # <loc> is required to be absolute, and plenty of generators emit a
+            # relative path anyway. Resolving against the sitemap's own URL
+            # costs nothing and keeps those sites from looking empty.
+            loc = urllib.parse.urljoin(sitemap_url, loc)
             if loc.startswith(prefix):
                 urls.append(loc)
         if urls:

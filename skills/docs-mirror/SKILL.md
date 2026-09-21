@@ -57,6 +57,16 @@ Both defaults hold unless the user says otherwise:
 
 The script never writes an empty file and calls it success, so an empty file is a bug to report, not an empty page.
 
+## When a mirror comes back short
+
+Exit 2 or 3, or a page count far below what the site's nav shows, is usually the start URL, not the site. Check these before reaching for a headless browser:
+
+1. **A vanity host that redirects.** Some doc hosts serve a meta-refresh stub under a custom domain and keep the pages on a generated hostname. The stub has no links, so discovery finds one page. `curl -sSL -o /dev/null -w '%{url_effective}\n' <url>` gives the real host; re-run against that.
+2. **The sitemap is not where you looked.** The script probes the start path and each parent before the origin root, so pass the path the docs actually live under (`/latest`, `/docs/v2`) rather than the bare domain.
+3. **The nav is client-rendered.** Then the crawl sees a handful of links and the sitemap is the only complete list. No sitemap and no links means the site really does need a browser.
+
+Empty pages on the source site are a real result. Report the count rather than treating them as failures.
+
 ## Why this exists
 
 Fetching pages one at a time costs one model call per page, and the model re-emits every page. Server-rendered sites (Next.js, Mintlify, Docusaurus, VitePress, MkDocs) put the prose in the first HTTP response, so mirroring is cheap HTTP plus local parsing and no page passes through a model unless you read it. Measured on a 53-page product docs site, 2026-09-02: 0 failures, one command.
