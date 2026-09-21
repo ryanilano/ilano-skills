@@ -13,11 +13,11 @@ that merely looks broken), you:
 
   1. Validate the input as-is. If it passes, ship it untouched.
   2. On failure, walk the validator's own issue list. At each failing path, try
-     a small ordered catalogue of repairs until one makes that path valid.
+     a small ordered catalog of repairs until one makes that path valid.
   3. Validate again. Log `tool_input_repaired:<tool>` or, if still invalid,
      `tool_input_invalid:<tool>` and return a model-readable retry message.
 
-The catalogue is the finite, compositional set of mistakes open models make
+The catalog is the finite, compositional set of mistakes open models make
 (observed by Awais across deepseek-flash, deepseek-v4-pro, glm, qwen):
 
   - null-for-optional : {"timeoutMs": null}      -> key omitted
@@ -151,7 +151,7 @@ def repair_path_autolink(value, expected):
     return value, False
 
 
-# ordered catalogue; json-array-parse strictly before bare-string-wrap
+# ordered catalog; json-array-parse strictly before bare-string-wrap
 _SHAPE_REPAIRS: list[tuple[str, Callable]] = [
     ("json-array-parse", repair_json_array_parse),
     ("empty-placeholder", repair_empty_placeholder),

@@ -21,31 +21,35 @@ Or just copy a folder from [skills/](skills/) into `~/.claude/skills/`.
 
 ### [Copyable Markdown](skills/copyable-markdown)
 
-Packages conversation content as one copyable block — a consolidated solution export by default, or `obsidian` for a frontmatter note, `terminal` for a pasteable bash block. Formerly markdown-copy.
+Packages conversation content as one copyable block — a consolidated solution export by default, or `obsidian` for a frontmatter note, `terminal` for a pasteable bash block. Formerly markdown-copy. Plain-language walkthrough in [the skill README](skills/copyable-markdown/README.md).
 
 ### [Prompt Pack](skills/prompt-pack)
 
-Compresses a loose task description into a structured, token-efficient prompt for an agentic coding tool. You orchestrate; the agent executes.
+Compresses a loose task description into a structured, token-efficient prompt for an agentic coding tool. You orchestrate; the agent executes. Plain-language walkthrough in [the skill README](skills/prompt-pack/README.md).
 
 ### [docs-mirror](skills/docs-mirror)
 
-Mirrors a whole documentation site or an RSS/Atom feed to local markdown in one command. Plain HTTP, no browser, no per-page model call. Honours robots.txt and rate-limits by default.
+Mirrors a whole documentation site or an RSS/Atom feed to local markdown in one command. Plain HTTP, no browser, no per-page model call. Honors robots.txt and rate-limits by default. Plain-language walkthrough in [the skill README](skills/docs-mirror/README.md).
 
 ### [yt-cc](skills/yt-cc)
 
-Pulls a video's captions to local markdown in one command, and serves a searchable board of everything grabbed. No video download, no transcription API.
+Pulls a video's captions to local markdown in one command, and serves a searchable board of everything grabbed. No video download, no transcription API. Plain-language walkthrough in [the skill README](skills/yt-cc/README.md).
 
 ### [socials-mirror](skills/socials-mirror)
 
-Snapshots a public figure's public profiles (GitHub, Bluesky, any RSS/Atom feed, Reddit `.rss`) to markdown in one command. Public data only, no login, one-shot. Also reads NetNewsWire's local cache with zero network.
+Snapshots a public figure's public profiles (GitHub, Bluesky, any RSS/Atom feed, Reddit `.rss`) to markdown in one command. Public data only, no login, one-shot. Also reads NetNewsWire's local cache with zero network. Plain-language walkthrough in [the skill README](skills/socials-mirror/README.md).
 
 ### [ffmpeg](skills/ffmpeg)
 
-Video, audio and image-sequence editing through one JSON-returning helper (`fftools.py`, 18 commands, by MastroMimmo, MIT). Forked: the script is upstream's, the skill text is rewritten steps-first with the catalogue disclosed to `references/`. Pairs with yt-cc's `--video`.
+Video, audio and image-sequence editing through one JSON-returning helper (`fftools.py`, 18 commands, by MastroMimmo, MIT). Forked: the script is upstream's, the skill text is rewritten steps-first with the catalog disclosed to `references/`. Pairs with yt-cc's `--video`. Plain-language walkthrough in [the skill README](skills/ffmpeg/README.md).
 
 ### [tool-call-repair](skills/tool-call-repair)
 
-Validate-then-repair for malformed LLM tool-call inputs, so open and cheaper models stop bouncing off strict schemas. Independent Python reimplementation of Ahmad Awais's documented technique; stdlib only.
+Validate-then-repair for malformed LLM tool-call inputs, so open and cheaper models stop bouncing off strict schemas. Independent Python reimplementation of Ahmad Awais's documented technique; stdlib only. Plain-language walkthrough in [the skill README](skills/tool-call-repair/README.md).
+
+### [spamcheck](skills/spamcheck)
+
+You clicked unsubscribe and the mail kept coming. This reads one saved email and says whether that is the sender's fault, which law it touches, and who can act on it. It checks the hidden `List-Unsubscribe` header that powers the Unsubscribe button in Gmail and Apple Mail, probes the link for a real status code, and classifies the message commercial or political first, because CAN-SPAM only reaches commercial mail. It also dates your unsubscribe click, so the ten business day rule becomes usable. Never opens a mailbox, never sends anything. Plain-language walkthrough in [the skill README](skills/spamcheck/README.md); legal citations quoted from primary sources in `references/`.
 
 ## Vendored skills
 

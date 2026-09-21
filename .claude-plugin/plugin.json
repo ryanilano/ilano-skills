@@ -1,7 +1,7 @@
 {
   "name": "ilano",
-  "version": "0.3.0",
-  "description": "Agent skills by Ryan Ilano: copyable-markdown, prompt-pack, docs-mirror, yt-cc, ffmpeg, socials-mirror, tool-call-repair, plus vendored skills (humanizer, writing-fragments, writing-beats, writing-shape, writing-for-agents) with pinned provenance.",
+  "version": "0.3.1",
+  "description": "Agent skills by Ryan Ilano: copyable-markdown, prompt-pack, docs-mirror, yt-cc, ffmpeg, socials-mirror, tool-call-repair, spamcheck, plus vendored skills (humanizer, writing-fragments, writing-beats, writing-shape, writing-for-agents) with pinned provenance.",
   "author": {
     "name": "Ryan Ilano"
   },

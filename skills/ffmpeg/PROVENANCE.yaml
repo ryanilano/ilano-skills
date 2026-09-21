@@ -13,7 +13,7 @@ note: >-
   `yt-cc <url> --video` leaves video.mp4 in the store, and this cuts,
   thumbnails or GIFs it.
 modifications:
-  - SKILL.md rewritten. Steps first (probe, operate, verify, show); the 18-command catalogue, raw ffmpeg recipes, CRF and container tables moved to references/commands.md
+  - SKILL.md rewritten. Steps first (probe, operate, verify, show); the 18-command catalog, raw ffmpeg recipes, CRF and container tables moved to references/commands.md
   - Script path is scripts/fftools.py relative to the skill directory instead of ~/ffmpeg-skill/scripts/fftools.py
   - Description shortened to what it does plus one trigger per branch
   - Upstream ffmpeg.md and README.md not carried; LICENSE carried as LICENSE.upstream

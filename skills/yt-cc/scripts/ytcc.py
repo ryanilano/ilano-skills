@@ -211,7 +211,7 @@ def grab(url, want_video=False):
 # Whole-channel mode
 #
 # Everything above this line handles exactly one video. `grab()` passes
-# --no-playlist to yt-dlp on every call, which is the correct behaviour for a
+# --no-playlist to yt-dlp on every call, which is the correct behavior for a
 # single URL: if you paste a link that happens to sit inside a playlist, you
 # want that one video, not the other four hundred.
 #
@@ -1336,7 +1336,7 @@ def main(argv):
 
     if url and not serve:
         # The fork in the road. A channel or playlist URL goes to the multi
-        # path; anything else keeps the original one-video behaviour. You can
+        # path; anything else keeps the original one-video behavior. You can
         # paste either kind of link and not think about it.
         if force_many or looks_multi(url):
             return cli_grab_many(url, want_video, limit, delay)

@@ -1,0 +1,8 @@
+origin: original
+author: Ryan Ilano
+note: >-
+  Bundles scripts/spamcheck.py, an unsubscribe-compliance auditor. Portable
+  (macOS/Linux/WSL), Python 3 standard library only, no external dependencies.
+  Reads a saved or pasted message; never connects to a mailbox and never sends
+  anything. Network access is limited to HEAD/GET probes of unsubscribe URLs the
+  message itself supplied, and only under --probe.
