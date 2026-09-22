@@ -14,6 +14,13 @@ python3 scripts/ytcc.py "<url>"
 Read the file it prints. That is the whole flow. Everything else on this page is
 for when the first line does not do what you need.
 
+Paste the link as you got it. A `youtu.be/ID?si=…` share link, a `/shorts/` or
+`/live/` link, `m.youtube.com`, a bare 11-character video id, or a bare
+`@handle` all resolve to the same canonical URL, and share and tracking
+parameters (`si=`, `feature=`, `utm_*`, `fbclid`) are stripped before the URL
+is used or written to `meta.json`. The cleaned URL is echoed to stderr when it
+differs from what was pasted.
+
 ## What comes back
 
 A directory per video under the store, named by video ID:
@@ -54,6 +61,7 @@ unfamiliar channel: find out it has 3,000 videos before fetching 3,000.
 | `--video` (`-v`, `+video`) | also download the mp4. Slow, large, and only needed when the answer is visual |
 | `-d DIR` (`--dir`, `--store`) | write to DIR instead of the default store |
 | `serve` | run the web board instead of grabbing |
+| `--selftest` | check the URL cleaner against known link forms, no network |
 | `--help` | usage |
 
 ## Environment
