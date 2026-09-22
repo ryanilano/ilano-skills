@@ -15,6 +15,11 @@ collection automatically. Flags:
   --delay S            seconds between videos in collection mode (default 1.5)
   --video, -v          also download the mp4 (slow, large)
   -d DIR, --dir DIR    write to DIR instead of the store
+  --selftest           check the URL cleaner against known link forms
+
+Any link form works: youtu.be, /shorts/, /live/, m.youtube.com, a bare
+11-character video id, a bare @handle. Share and tracking parameters (si=,
+feature=, utm_*, fbclid…) are stripped before the URL is used or stored.
 
 Every grab saves the video description, upload date, view count, tags and
 chapters. A video with no English captions still gets its description and
@@ -35,7 +40,7 @@ import time
 import urllib.request
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import parse_qs, urlparse
+from urllib.parse import parse_qs, parse_qsl, urlencode, urlparse, urlunparse
 
 
 def _env(k, d=""):
@@ -59,6 +64,128 @@ PORT = int(_env("YTCC_PORT") or "8091")
 COOKIES_BROWSER = _env("YTCC_COOKIES_BROWSER")
 TAG_RE = re.compile(r"<[^>]+>")
 TS_RE = re.compile(r"^\d\d:\d\d:\d\d\.\d+ --> ")
+
+
+# ---------------------------------------------------------------------------
+# URL cleaning
+#
+# A pasted link carries the sharer, not the video: youtu.be/ID?si=…, a
+# feature=share, utm_* from a newsletter, an fbclid. None of it changes which
+# captions come back, but it does leak who shared the link into meta.json and
+# every note that quotes the URL. So every URL is cleaned before yt-dlp sees
+# it and before it is written anywhere.
+#
+# The same function accepts the short forms people actually type: a bare
+# 11-character video id, a bare @handle, a youtu.be link, a /shorts/ or /live/
+# link, and unfolds them to the one canonical form yt-dlp and the store use.
+# ---------------------------------------------------------------------------
+
+# Query keys that identify the click or the sharer, never the content.
+TRACKING_KEYS = {"si", "feature", "pp", "fbclid", "gclid", "dclid", "msclkid",
+                 "igsh", "igshid", "mc_cid", "mc_eid", "ref", "ref_src", "ref_url",
+                 "source", "s", "_hsenc", "_hsmi", "mkt_tok", "yclid", "twclid"}
+# Keys that still mean something on a YouTube watch URL.
+WATCH_KEYS = ("v", "list", "t")
+YT_HOSTS = ("youtube.com", "youtube-nocookie.com", "youtu.be")
+YT_ID_RE = re.compile(r"^[A-Za-z0-9_-]{11}$")
+YT_HANDLE_RE = re.compile(r"^@[\w.-]{3,}$")
+YT_CHANNEL_RE = re.compile(r"^UC[A-Za-z0-9_-]{22}$")
+YT_PLAYLIST_RE = re.compile(r"^(?:PL|UU|LL|RD|OL|FL)[A-Za-z0-9_-]{8,}$")
+
+
+def _keep_query(pairs, allow=None):
+    """Drop tracking keys (and utm_*); with `allow`, keep only those keys, in that order."""
+    kept = [(k, v) for k, v in pairs
+            if k.lower() not in TRACKING_KEYS and not k.lower().startswith("utm_")]
+    if allow is not None:
+        by_key = dict(kept)
+        kept = [(k, by_key[k]) for k in allow if k in by_key]
+    return kept
+
+
+def clean_url(raw):
+    """Canonical form of whatever was pasted. Never raises; unknown input passes through.
+
+    Bare forms:  dQw4w9WgXcQ  ->  https://www.youtube.com/watch?v=dQw4w9WgXcQ
+                 @AZisk       ->  https://www.youtube.com/@AZisk
+                 PLxxxx…      ->  https://www.youtube.com/playlist?list=PLxxxx…
+                 UCxxxx…      ->  https://www.youtube.com/channel/UCxxxx…
+    Short forms: youtu.be/ID, /shorts/ID, /live/ID, /embed/ID, m.youtube.com
+                 all become www.youtube.com/watch?v=ID (list= and t= kept).
+    Every host:  si, feature, utm_*, fbclid and the like are removed.
+    """
+    s = (raw or "").strip().strip("<>").strip()
+    if not s:
+        return s
+    if YT_ID_RE.match(s):
+        return f"https://www.youtube.com/watch?v={s}"
+    if YT_HANDLE_RE.match(s):
+        return f"https://www.youtube.com/{s}"
+    if YT_CHANNEL_RE.match(s):
+        return f"https://www.youtube.com/channel/{s}"
+    if YT_PLAYLIST_RE.match(s):
+        return f"https://www.youtube.com/playlist?list={s}"
+    if "://" not in s:
+        s = "https://" + s.lstrip("/")
+    u = urlparse(s)
+    host = u.netloc.lower().split("@")[-1].split(":")[0]
+    pairs = parse_qsl(u.query, keep_blank_values=False)
+    path = u.path or "/"
+
+    if not (host in YT_HOSTS or any(host.endswith("." + h) for h in YT_HOSTS)):
+        return urlunparse((u.scheme, u.netloc, u.path, "", urlencode(_keep_query(pairs)), ""))
+
+    vid = None
+    if host == "youtu.be":
+        vid = path.strip("/").split("/")[0]
+    else:
+        m = re.match(r"^/(?:shorts|live|embed|v)/([A-Za-z0-9_-]{11})(?:/|$)", path)
+        if m:
+            vid = m.group(1)
+        elif path.rstrip("/") in ("/watch", "/attribution_link"):
+            vid = dict(pairs).get("v")
+
+    if vid and YT_ID_RE.match(vid):
+        q = [("v", vid)] + [(k, v) for k, v in _keep_query(pairs, WATCH_KEYS) if k != "v"]
+        return "https://www.youtube.com/watch?" + urlencode(q)
+
+    # Channel, playlist, handle and tab URLs: keep the path, keep list=, drop the rest.
+    q = _keep_query(pairs, ("list", "index") if path.rstrip("/") == "/playlist" else ("list",))
+    path = re.sub(r"/+$", "", path) or "/"
+    return urlunparse(("https", "www.youtube.com", path, "", urlencode(q), ""))
+
+
+def selftest():
+    """Exercise clean_url on the forms that show up in practice. Exit 1 on any miss."""
+    W = "https://www.youtube.com/watch?v=QbtScohcdwI"
+    cases = [
+        ("https://youtu.be/TBOtZ3mBktM?si=qih-rLmYPaiSom9s", "https://www.youtube.com/watch?v=TBOtZ3mBktM"),
+        ("https://youtu.be/QbtScohcdwI", W),
+        ("https://www.youtube.com/watch?v=QbtScohcdwI&feature=share&utm_source=nl", W),
+        ("https://m.youtube.com/watch?v=QbtScohcdwI&pp=ygUFYWxleA%3D%3D", W),
+        ("https://www.youtube.com/watch?si=abc&t=95&v=QbtScohcdwI", W + "&t=95"),
+        ("https://www.youtube.com/watch?v=QbtScohcdwI&list=PLabcdefghij&index=3&si=x",
+         W + "&list=PLabcdefghij"),
+        ("https://www.youtube.com/shorts/QbtScohcdwI?feature=share", W),
+        ("https://www.youtube.com/live/QbtScohcdwI?si=zz", W),
+        ("https://www.youtube-nocookie.com/embed/QbtScohcdwI?rel=0", W),
+        ("QbtScohcdwI", W),
+        ("@AZisk", "https://www.youtube.com/@AZisk"),
+        ("youtube.com/@AZisk/videos?si=abc", "https://www.youtube.com/@AZisk/videos"),
+        ("https://www.youtube.com/@AZisk/", "https://www.youtube.com/@AZisk"),
+        ("https://www.youtube.com/playlist?list=PLabcdefghij&si=abc", "https://www.youtube.com/playlist?list=PLabcdefghij"),
+        ("PLabcdefghij", "https://www.youtube.com/playlist?list=PLabcdefghij"),
+        ("UCajiMK_CY9icRhLepS8_3ug", "https://www.youtube.com/channel/UCajiMK_CY9icRhLepS8_3ug"),
+        ("https://vimeo.com/123456?utm_campaign=x&fbclid=y", "https://vimeo.com/123456"),
+        ("https://example.com/talk?id=7&ref=tw", "https://example.com/talk?id=7"),
+        ("  <https://youtu.be/QbtScohcdwI?si=1>  ", W),
+        ("", ""),
+    ]
+    bad = [(i, o, clean_url(i)) for i, o in cases if clean_url(i) != o]
+    for i, want, got in bad:
+        print(f"FAIL {i!r}\n  want {want}\n  got  {got}", file=sys.stderr)
+    print(f"clean_url: {len(cases) - len(bad)}/{len(cases)} ok", file=sys.stderr)
+    return 1 if bad else 0
 
 
 def ytdlp_base():
@@ -1227,7 +1354,7 @@ class H(BaseHTTPRequestHandler):
             return self._send("not found", "text/plain", 404)
         n = int(self.headers.get("Content-Length", 0))
         q = parse_qs(self.rfile.read(n).decode())
-        url = (q.get("url") or [""])[0].strip()
+        url = clean_url((q.get("url") or [""])[0])
         want_video = bool(q.get("video"))
         r = grab(url, want_video) if url else {"error": "no url"}
         if "error" in r:
@@ -1318,6 +1445,8 @@ def main(argv):
         elif a in ("-h", "--help", "help"):
             print(__doc__)
             return 0
+        elif a == "--selftest":
+            return selftest()
         elif a in ("serve", "--serve"):
             serve = True
         elif a in ("-d", "--dir", "--store"):
@@ -1331,10 +1460,18 @@ def main(argv):
         elif a == "grab":
             pass
         elif url is None:
+            # A bare video id, @handle, playlist id or channel id. clean_url
+            # unfolds it below.
             url = a
         i += 1
 
     if url and not serve:
+        # Strip the sharer out of the link and unfold short forms first, so
+        # the store, meta.json and yt-dlp all see one canonical URL.
+        cleaned = clean_url(url)
+        if cleaned != url:
+            print(f"yt-cc: using {cleaned}", file=sys.stderr)
+        url = cleaned
         # The fork in the road. A channel or playlist URL goes to the multi
         # path; anything else keeps the original one-video behavior. You can
         # paste either kind of link and not think about it.

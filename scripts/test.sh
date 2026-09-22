@@ -164,6 +164,23 @@ check_diff_upstream "matching vendored skill exits 0" 0 "" vendored-skill
 sed -i.bak '/upstream_path/d' "$FIX/skills/vendored-skill/PROVENANCE.yaml" && rm -f "$FIX/skills/vendored-skill/PROVENANCE.yaml.bak"
 check_diff_upstream "missing upstream_path is a config error" 2 "needs upstream_repo, upstream_sha, and upstream_path" vendored-skill
 
+# --- skill script self-tests (offline) --------------------------------------------
+
+check_selftest() { # check_selftest <desc> <script> [args...]
+  local desc="$1" rc=0
+  shift
+  python3 "$@" > "$TMP/out" 2> "$TMP/err" || rc=$?
+  if [ "$rc" -ne 0 ]; then
+    t_fail "$desc: $(cat "$TMP/err")"
+  else
+    t_pass "$desc"
+  fi
+}
+
+check_selftest "yt-cc URL cleaner" "$ROOT/skills/yt-cc/scripts/ytcc.py" --selftest
+check_selftest "socials-mirror input cleaners" "$ROOT/skills/socials-mirror/scripts/socials_mirror.py" --selftest
+check_selftest "linkedin-jobs id parser" "$ROOT/skills/socials-mirror/scripts/linkedin_jobs.py" --selftest
+
 # --- summary ---------------------------------------------------------------------
 
 total=$((passed + failed))
