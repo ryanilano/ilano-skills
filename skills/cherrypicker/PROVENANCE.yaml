@@ -1,0 +1,12 @@
+origin: original
+author: Ryan Ilano
+license: MIT
+note: >-
+  Bundles scripts/cherrypicker.py (splits two drafts into units, builds the
+  merge page), scripts/verify.py (headless Playwright check of a built page)
+  and scripts/serve-tailscale.sh (serves a page to the author's own tailnet,
+  refusing to run over existing serve mounts). Supersedes the earlier
+  copy-merge skill by the same author, which had A, B, Both and Cut only;
+  cherrypicker adds Rewrite, four combine modes, per-row notes and a
+  source-text worklist in the export. Moved into this repo under MIT on
+  2026-09-23.

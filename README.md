@@ -51,6 +51,10 @@ Validate-then-repair for malformed LLM tool-call inputs, so open and cheaper mod
 
 You clicked unsubscribe and the mail kept coming. This reads one saved email and says whether that is the sender's fault, which law it touches, and who can act on it. It checks the hidden `List-Unsubscribe` header that powers the Unsubscribe button in Gmail and Apple Mail, probes the link for a real status code, and classifies the message commercial or political first, because CAN-SPAM only reaches commercial mail. It also dates your unsubscribe click, so the ten business day rule becomes usable. Never opens a mailbox, never sends anything. Plain-language walkthrough in [the skill README](skills/spamcheck/README.md); legal citations quoted from primary sources in `references/`.
 
+### [cherrypicker](skills/cherrypicker)
+
+Two drafts of the same piece, one decision per section. Lays both side by side, aligned by what each passage does rather than by line, with A, B, Both (four ways to combine), Rewrite or Cut on every row, and exports the decisions plus a worklist of what still needs writing. Picks save into the page's URL, so it resumes on a tablet. Plain-language walkthrough in [the skill README](skills/cherrypicker/README.md).
+
 ## Vendored skills
 
 Byte-identical copies of other people's skills, pinned to a commit. `scripts/validate.sh` diffs each one against its upstream on every run, and `scripts/diff-upstream.sh <skill> --latest` shows what upstream changed since. Each directory carries the upstream license as `LICENSE.upstream` and a `PROVENANCE.yaml` with the repo, SHA, path and fetch time.
