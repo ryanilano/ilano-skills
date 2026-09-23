@@ -7,11 +7,10 @@ FRIENDLY, PUBLIC-ONLY, NOT A STALKER TOOL. Rules baked in:
   - Never logs in, never circumvents an auth wall, never uses a private cookie.
   - One-shot snapshot, no monitoring/polling loop.
   - Identifies itself with a User-Agent and rate-limits between requests.
-  - X/Twitter and LinkedIn serve no timeline without a login: the skill records
-    the canonical profile URL and, if you hand it a public RSS bridge feed for
-    them, treats that as a normal feed. It does NOT scrape logged-in content.
-    Individual X posts you name (--x-post) are mirrored from the public embed
-    endpoint, which needs no account.
+  - X serves no timeline without a login, so --x reads public copies: the
+    author's page on Thread Reader (threads anyone unrolled there) and any
+    Nitter-style RSS mirror you name. Individual X posts you name (--x-post)
+    come from the public embed endpoint. It does NOT scrape logged-in content.
 
 Usage:
   socials_mirror.py "Ahmad Awais" \
@@ -431,6 +430,108 @@ def x_thread(ref: str) -> dict:
             "source": f"https://threadreaderapp.com/thread/{tid}.html", "posts": posts, "failed": []}
 
 
+def x_thread_index(handle: str) -> list:
+    """The author's page on Thread Reader: every thread someone unrolled there.
+
+    Public HTML, no login. It lists the most recent unrolled threads (about 15
+    per page) with id, date, post count and a preview. This is the one public
+    view of an X timeline left: X serves none without a login.
+    """
+    body, enc = get(f"https://threadreaderapp.com/user/{parse.quote(handle)}", accept="text/html")
+    page = body.decode(enc, "replace")
+    out = []
+    for card in re.split(r'(?=<div class="col-12" data-controller="link" data-link-href="/thread/)', page)[1:]:
+        m = re.search(r'data-link-href="/thread/(\d+)\.html"', card)
+        if not m:
+            continue
+        when = re.search(r'data-time="(\d+)"', card)
+        count = re.search(r"(\d+)\s+tweets", card)
+        # The preview is everything after the card-tweetsv2 opening tag; a
+        # thumbnail sits in its own nested div, so dropping that first keeps a
+        # nested </div> from cutting the text short.
+        prev = card.split('class="card-tweetsv2"', 1)[1].split(">", 1)[1] if 'class="card-tweetsv2"' in card else ""
+        prev = re.sub(r'<div class="thumb-div">.*?</div>', "", prev, flags=re.S)
+        text = _html.unescape(re.sub(r"<[^>]+>", "", re.sub(r"<br\s*/?>", "\n", prev))).strip()
+        out.append({"id": m.group(1),
+                    "date": time.strftime("%Y-%m-%d", time.gmtime(int(when.group(1)))) if when else "",
+                    "posts": int(count.group(1)) if count else None,
+                    "preview": re.sub(r"\n{3,}", "\n\n", text)[:600],
+                    "url": f"https://x.com/{handle}/status/{m.group(1)}",
+                    "reader": f"https://threadreaderapp.com/thread/{m.group(1)}.html"})
+    return out
+
+
+def x_mirror_feed(handle: str, templates: list) -> dict | None:
+    """First Nitter-style RSS mirror that answers with a real feed, or None.
+
+    Templates look like https://mirror.example/{handle}/rss. None ships as a
+    default: every public mirror checked on 2026-09-23 was down or suspended
+    (nitter.net and others did not answer, xcancel.com returned HTTP 451).
+    """
+    for t in templates:
+        url = t.replace("{handle}", parse.quote(handle))
+        try:
+            d = feed(url)
+            if d["entries"]:
+                return d
+        except (error.HTTPError, error.URLError, ET.ParseError, ValueError) as e:
+            print(f"  X mirror {url} did not answer with a feed ({type(e).__name__})", file=sys.stderr)
+        time.sleep(DELAY)
+    return None
+
+
+def x_profile(profile_url: str, full: int, templates: list) -> dict:
+    handle = profile_url.rstrip("/").rsplit("/", 1)[-1]
+    d = {"platform": "x", "profile": profile_url, "handle": handle,
+         "threads": [], "threads_full": [], "mirror": None, "failed": []}
+    try:
+        d["threads"] = x_thread_index(handle)
+    except (error.HTTPError, error.URLError, ValueError) as e:
+        d["failed"].append(("threadreaderapp user page", f"{type(e).__name__}: {e}"))
+    for t in d["threads"][:max(0, full)]:
+        time.sleep(DELAY)
+        try:
+            d["threads_full"].append(x_thread(t["id"]))
+        except (error.HTTPError, error.URLError, ValueError) as e:
+            d["failed"].append((t["id"], f"{type(e).__name__}: {e}"))
+    if templates:
+        d["mirror"] = x_mirror_feed(handle, templates)
+    return d
+
+
+def x_profile_md(d: dict) -> str:
+    lines = ["# X / Twitter", "", f"Public profile: {d['profile']}", "",
+             "> X serves no timeline without a login. What is here comes from public "
+             "copies: the threads anyone has unrolled on Thread Reader, and an RSS "
+             "mirror if one was given and answered.", ""]
+    if d["threads"]:
+        lines += [f"## Threads unrolled on Thread Reader ({len(d['threads'])})", "",
+                  f"Source: https://threadreaderapp.com/user/{d['handle']}", ""]
+        for t in d["threads"]:
+            n = f"{t['posts']} posts" if t.get("posts") else ""
+            lines += [f"- **{t['date']}** · {n} · {t['url']} · [reader]({t['reader']})",
+                      "  " + t["preview"].replace("\n", " ")[:280], ""]
+    else:
+        lines += ["No threads by this author are cached on Thread Reader.", ""]
+    for th in d["threads_full"]:
+        lines += [f"## Thread {th['thread_root']} ({len(th['posts'])} posts)", "", f"Source: {th['source']}", ""]
+        for i, p in enumerate(th["posts"], 1):
+            lines += [f"### {i}/{len(th['posts'])}", "", p.get("text", ""), ""]
+            for m in p.get("media") or []:
+                lines.append(f"- media: {m}")
+            for u in p.get("links") or []:
+                lines.append(f"- link: {u}")
+            lines += [f"- post: {p['url']}", ""]
+    if d.get("mirror"):
+        m = d["mirror"]
+        lines += [f"## Recent posts via RSS mirror ({len(m['entries'])})", "", f"Source: {m['url']}", ""]
+        for e in m["entries"]:
+            lines += [f"**[{e['date']}]** {e['link']}", "", e["text"], ""]
+    for r, why in d.get("failed") or []:
+        lines.append(f"- FAILED {r}: {why}")
+    return "\n".join(lines) + "\n"
+
+
 def x_md(profile_url: str, d: dict) -> str:
     lines = ["# X / Twitter", ""]
     if profile_url:
@@ -611,11 +712,20 @@ def main(argv=None):
     # Twitter is X. Every X flag has a --twitter spelling so a request phrased
     # either way lands on the same code.
     ap.add_argument("--x", "--twitter", dest="x",
-                    help="X/Twitter handle or URL (profile link recorded; timeline needs a login)")
+                    help="X/Twitter handle or URL: the author's threads from Thread Reader's "
+                         "public cache, plus an RSS mirror if given (X serves no timeline "
+                         "without a login)")
     ap.add_argument("--x-post", "--tweet", "--twitter-post", action="append", default=[], dest="x_posts",
                     help="a post/tweet URL or id (repeatable); full text mirrored via the public embed endpoint")
     ap.add_argument("--x-thread", "--twitter-thread", dest="x_thread",
                     help="root post URL or id; the whole thread from Thread Reader's public cache, root only if not cached")
+    ap.add_argument("--x-threads", type=int, default=5, metavar="N",
+                    help="with --x: pull the N most recent threads the author has on Thread "
+                         "Reader in full (default 5; 0 lists them only)")
+    ap.add_argument("--x-rss-mirror", action="append", default=[], metavar="TEMPLATE",
+                    help="Nitter-style RSS mirror to try for --x, e.g. "
+                         "https://mirror.example/{handle}/rss (repeatable; also "
+                         "SOCIALS_X_RSS, comma separated). None is built in")
     ap.add_argument("--linkedin", help="LinkedIn slug, in/slug, company/slug, or URL: guest view (profile + listed recent posts), link only if refused")
     ap.add_argument("--out", default="./socials")
     ap.add_argument("--json", action="store_true", help="also write structured .json per platform")
@@ -679,7 +789,10 @@ def main(argv=None):
     if args.x_posts:
         do("X/Twitter", lambda: x_posts(args.x_posts), lambda d: x_md(args.x, d), "x")
     elif args.x and not args.x_thread:
-        write(out_dir, "x", "md", linkonly_md("X / Twitter", args.x)); index.append("- **X/Twitter**: [x.md](x.md) (link only)")
+        import os as _os
+        templates = args.x_rss_mirror + [t.strip() for t in
+                                         _os.environ.get("SOCIALS_X_RSS", "").split(",") if t.strip()]
+        do("X/Twitter", lambda: x_profile(args.x, args.x_threads, templates), x_profile_md, "x")
     if args.linkedin:
         def li_or_link():
             try:

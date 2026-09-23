@@ -12,12 +12,14 @@ only what those platforms serve to anyone without logging in.
 - **Any RSS or Atom feed**: full posts. This is also the clean path for Reddit, whose
   own `.rss` endpoints carry the whole post.
 - **X, which is Twitter**: the two names mean the same thing here, and the tool accepts
-  either spelling on its flags and either domain in a link. The profile is recorded as a
-  link, because X serves no timeline to anyone who is not logged in. Any post you name by URL or id is mirrored in full, using the same
-  public endpoint the embed widget uses, with no account involved. A whole thread comes
-  from Thread Reader's public cache when someone has unrolled it there; otherwise you get
-  the root post and a note saying so. If you have a public RSS bridge for an X account,
-  pass it as a feed.
+  either spelling on its flags and either domain in a link. X serves no timeline to
+  anyone who is not logged in, so for a profile the tool reads the public copies instead:
+  Thread Reader keeps a page per author listing every thread anyone has unrolled there,
+  and the tool lists those and pulls the five most recent in full. If you know a working
+  Nitter-style mirror that publishes RSS, name it and the tool tries it too; none is
+  built in, because every public one checked in September 2026 was down or suspended.
+  Any post you name by URL or id is mirrored in full, using the same public endpoint the
+  embed widget uses, with no account involved.
 - **LinkedIn**: the logged-out copy of a profile or company page, which is what a search
   engine sees: name, headline, the about text, location, follower count, and the few
   recent posts the page lists, each with its full text. LinkedIn throttles guests after
