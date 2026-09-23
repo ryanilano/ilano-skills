@@ -68,6 +68,21 @@ most useful signal in here.
    carry and political mail is not.
 7. **A "paid for by" disclaimer**, but only on messages it classifies as political.
 
+## Phishing is checked first
+
+Before any unsubscribe audit, every email is checked for the signs of a scam: a
+failing DMARC (or SPF and DKIM both failing) in the receiving server's
+`Authentication-Results`, a brand name in the From display name sent from someone
+else's domain, a Reply-To on a different domain, a link whose visible text names one
+site while it opens another, risky link hosts, and phishing bait in the copy.
+
+When those add up, the message is classified **scam**, gets no CAN-SPAM findings, and
+**nothing is probed, not even with `--probe`**: a phisher's unsubscribe link is just
+another link to their server. The report gives the FTC's advice instead: do not click
+or reply, forward to reportphishing@apwg.org, report at ReportFraud.ftc.gov, delete.
+A single signal (say, a Reply-To mismatch from a mailing service) is reported as an
+observation without changing the classification.
+
 ## Record the click, or the best rule in the statute is unusable
 
 The strongest provision is not the broken link. It is the **10 business day** honor

@@ -47,6 +47,16 @@ So the tool starts with the header, because that is where the silent failures li
 7. **Is there a "paid for by" line?** Only checked on political mail. Missing it is an
    FEC matter, not a CAN-SPAM one.
 
+## It checks for phishing before anything else
+
+A fake PayPal or bank email is not a list you can unsubscribe from, and clicking its
+unsubscribe link just visits the scammer's server. So the first thing the tool asks is
+whether the email is phishing: did the sender's domain fail authentication, does the
+name in your inbox claim a brand the address does not belong to, do replies go
+somewhere else, does a link show one site and open another. If it adds up, the report
+says so, opens nothing, and tells you where to forward it (reportphishing@apwg.org)
+and report it (ReportFraud.ftc.gov).
+
 ## Why it classifies the email before naming any law
 
 CAN-SPAM only covers commercial email. It does not cover campaign email, and there is

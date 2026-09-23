@@ -291,12 +291,180 @@ def probe(url):
     return out
 
 
+# ---------------------------------------------------------------- email scams
+# Phishing is a different problem from list mail. A scam gets no unsubscribe
+# audit and no probe: its links and its "unsubscribe" exist to be clicked.
+
+EMAIL_ONLY_SCAM_HINTS = [
+    "password expires", "password will expire", "verify your identity",
+    "confirm your account", "payment failed", "payment declined",
+    "update your payment", "mailbox is full", "storage is full",
+    "suspicious sign-in", "unusual sign-in", "wire transfer", "bitcoin",
+    "urgent action required", "your account will be closed",
+]
+
+
+class _Anchors(__import__("html.parser", fromlist=["HTMLParser"]).HTMLParser):
+    """Collect (href, visible text) for every <a> in an HTML part."""
+
+    def __init__(self):
+        super().__init__()
+        self.links, self._href, self._text = [], None, []
+
+    def handle_starttag(self, tag, attrs):
+        if tag == "a":
+            self._href = dict(attrs).get("href") or ""
+            self._text = []
+
+    def handle_data(self, data):
+        if self._href is not None:
+            self._text.append(data)
+
+    def handle_endtag(self, tag):
+        if tag == "a" and self._href is not None:
+            self.links.append((self._href, "".join(self._text).strip()))
+            self._href = None
+
+
+def _host(u):
+    return u.split("://", 1)[-1].split("/", 1)[0].split(":", 1)[0].split("@")[-1].lower()
+
+
+def html_anchors(msg):
+    out = []
+    for part in (msg.walk() if msg.is_multipart() else [msg]):
+        if part.get_content_type() == "text/html":
+            try:
+                p = _Anchors()
+                p.feed(part.get_content())
+                out += p.links
+            except Exception:
+                pass
+    return out
+
+
+def auth_results(msg):
+    """spf, dkim, dmarc verdicts from the receiving server's topmost header."""
+    heads = msg.get_all("Authentication-Results") or []
+    if not heads:
+        return {}
+    top = str(heads[0]).lower()
+    return {k: m.group(1) for k in ("spf", "dkim", "dmarc")
+            for m in [re.search(k + r"\s*=\s*(\w+)", top)] if m}
+
+
+def email_scam(msg, text):
+    """Return (is_scam, why, evidence findings)."""
+    from email.utils import parseaddr
+    ev, score = [], 0
+    name, addr = parseaddr(msg.get("From", "") or "")
+    from_dom = addr.rsplit("@", 1)[-1].lower() if "@" in addr else ""
+
+    auth = auth_results(msg)
+    if auth.get("dmarc") == "fail" or (auth.get("spf") in ("fail", "softfail")
+                                       and auth.get("dkim") in ("fail", "none")):
+        score += 2
+        ev.append(dict(
+            id="email-auth-fail", severity="high",
+            title="The sender's domain did not authenticate",
+            detail="Your mail server recorded " + ", ".join(
+                f"{k}={v}" for k, v in auth.items()) + " for this message. A "
+                "failing DMARC, or SPF and DKIM both failing, means the From "
+                "address was very likely forged.",
+            rule="RFC 7489 (DMARC), RFC 7208 (SPF), RFC 6376 (DKIM)"))
+
+    low_name = (name or "").lower()
+    for b in BRANDS:
+        if re.search(r"\b" + re.escape(b) + r"\b", low_name) and \
+                b not in org_domain(from_dom).split(".")[0].replace("-", ""):
+            score += 2
+            ev.append(dict(
+                id="email-brand-spoof", severity="high",
+                title=f"Display name says '{name}' but it came from {from_dom}",
+                detail=f"The name shown in your inbox claims {b}, and the actual "
+                       f"address is at {from_dom}, which is not {b}'s domain.",
+                rule="observation, not a legal finding"))
+            break
+
+    reply = parseaddr(msg.get("Reply-To", "") or "")[1]
+    if reply and "@" in reply and from_dom and \
+            org_domain(reply.rsplit("@", 1)[-1]) != org_domain(from_dom):
+        score += 1
+        ev.append(dict(
+            id="email-reply-to-mismatch", severity="medium",
+            title=f"Replies go to {reply.rsplit('@', 1)[-1]}, not {from_dom}",
+            detail="Hitting Reply would send your answer to a different domain "
+                   "than the sender's. Some mailing services do this legitimately; "
+                   "in a message asking for money or a login it is a classic tell.",
+            rule="observation, not a legal finding"))
+
+    seen = set()
+    for href, shown in html_anchors(msg):
+        if not href.lower().startswith("http"):
+            continue
+        h = _host(href)
+        m = SMS_URL_RE.fullmatch(shown.strip()) if shown else None
+        if m and "." in shown:
+            sh = _host(shown if "://" in shown else "http://" + shown)
+            if org_domain(sh) != org_domain(h) and (sh, h) not in seen:
+                seen.add((sh, h))
+                score += 1
+                ev.append(dict(
+                    id="email-link-mismatch", severity="medium",
+                    title=f"A link shows {sh} but goes to {h}",
+                    detail="The text of the link names one site and the link "
+                           "itself opens another. Mailing services' click "
+                           "trackers do this too, so weigh it with the rest.",
+                    rule="observation, not a legal finding"))
+        risk = host_risk(h)
+        if risk and h not in seen:
+            seen.add(h)
+            score += 1
+            ev.append(dict(
+                id="email-risky-link", severity="medium",
+                title=f"Risky link: {h}",
+                detail=f"{href[:120]}: " + "; ".join(risk) + ". Not requested.",
+                rule="observation, not a legal finding"))
+
+    low = text.lower()
+    hints = [x for x in SMS_SCAM_HINTS + EMAIL_ONLY_SCAM_HINTS if x in low]
+    if len(hints) >= 2:
+        score += 2
+    elif hints:
+        score += 1
+
+    is_scam = score >= 3 and (hints or any(e["id"] in ("email-brand-spoof",
+                                                         "email-auth-fail")
+                                           for e in ev))
+    why = (f"score {score}: " + ", ".join(e["id"] for e in ev)
+           + (f"; bait: {', '.join(hints[:3])}" if hints else ""))
+    return is_scam, why, ev
+
+
 # ---------------------------------------------------------------- findings
 
 def audit(msg, text, probed):
     """Return findings, most actionable first. Each names the rule and the fix."""
     f = []
     hdr = header_unsub(msg)
+
+    # Phishing first: a forged receipt is still a scam, so this runs before the
+    # transactional carve-out, and a scam gets no unsubscribe audit at all.
+    scam, scam_why, scam_ev = email_scam(msg, text)
+    if scam:
+        f.append(dict(
+            id="email-likely-scam", severity="high",
+            title="This looks like a phishing email, not list mail",
+            detail=f"Classified scam ({scam_why}). Do not click any link in it, "
+                   "including its unsubscribe link, and do not reply. Forward it "
+                   "to the Anti-Phishing Working Group at reportphishing@apwg.org, "
+                   "report it to the FTC at ReportFraud.ftc.gov, then delete it. "
+                   "If it names your bank or a company you use, contact them "
+                   "through their own site or app. Nothing was probed.",
+            rule=RULE_PHISH))
+        f += scam_ev
+        return f, "scam", scam_why, hdr
+    f += scam_ev
 
     trans, trans_why = is_transactional(msg)
     if trans:
@@ -570,28 +738,39 @@ def sms_links(text):
         host = tok.split("://", 1)[-1].split("/", 1)[0].split(":", 1)[0].lower()
         if re.fullmatch(r"[\d.]+", host) and host.count(".") != 3:
             continue
-        why = []
-        if host in SHORTENERS:
-            why.append("link shortener hides the destination")
-        if re.fullmatch(r"\d{1,3}(?:\.\d{1,3}){3}", host):
-            why.append("raw IP address instead of a domain")
-        if "xn--" in host:
-            why.append("punycode domain, can imitate another name")
-        label = host.split(".")[-2] if host.count(".") >= 1 else host
-        for b in BRANDS:
-            if b in host.replace("-", "") and not (
-                    label.replace("-", "") == b and host.count(".") == 1):
-                why.append(f"contains the brand '{b}' but is not {b}'s own domain")
-                break
-        if host.count("-") >= 2:
-            why.append("several hyphens, typical of throwaway lookalike domains")
-        tld = host.rsplit(".", 1)[-1]
-        if tld in ("top", "xyz", "icu", "cfd", "sbs", "vip", "cc", "live", "shop",
-                   "click", "info", "buzz", "rest", "lol", "cyou", "bond"):
-            why.append(f".{tld} is a cheap TLD common in scam texts")
+        why = host_risk(host)
         if not any(tok == o["link"] for o in out):
             out.append({"link": tok, "host": host, "risk": why})
     return out
+
+
+def host_risk(host):
+    """Reasons a link host looks risky. Shared by the text and email checks."""
+    why = []
+    host = host.lower()
+    if host in SHORTENERS:
+        why.append("link shortener hides the destination")
+    if re.fullmatch(r"\d{1,3}(?:\.\d{1,3}){3}", host):
+        why.append("raw IP address instead of a domain")
+    if "xn--" in host:
+        why.append("punycode domain, can imitate another name")
+    label = host.split(".")[-2] if host.count(".") >= 1 else host
+    for b in BRANDS:
+        if b in host.replace("-", "") and not (
+                label.replace("-", "") == b and host.count(".") == 1):
+            if org_domain(host).split(".")[0].replace("-", "") != b:
+                why.append(f"contains the brand '{b}' but is not {b}'s own domain")
+                break
+    if host.count("-") >= 2:
+        why.append("several hyphens, typical of throwaway lookalike domains")
+    tld = host.rsplit(".", 1)[-1]
+    if tld in CHEAP_TLDS:
+        why.append(f".{tld} is a cheap TLD common in scams")
+    return why
+
+
+CHEAP_TLDS = ("top", "xyz", "icu", "cfd", "sbs", "vip", "cc", "live", "shop",
+              "click", "info", "buzz", "rest", "lol", "cyou", "bond")
 
 
 def classify_sms(text):
@@ -752,6 +931,8 @@ def audit_sms(text, sender, received):
 
 
 # Citations live here, one place, so the references file and the report agree.
+RULE_PHISH = ("FTC, How to recognize and avoid phishing scams: forward to "
+              "reportphishing@apwg.org, report at ReportFraud.ftc.gov")
 RULE_SCAM = ("FTC consumer alert on toll text scams (Jan 2025); FTC, How to recognize "
              "and report spam text messages; see references/texts.md")
 RULE_REVOKE = ("47 CFR 64.1200(a)(10), (a)(12); under FCC review for 2026-09-30, "
@@ -1003,7 +1184,9 @@ def main():
             for u in body_links:
                 if u not in targets:
                     targets.append(u)
-        probed = [probe(u) for u in targets] if (args.probe or args.probe_body) else []
+        is_scam = email_scam(msg, text)[0]
+        probed = ([probe(u) for u in targets]
+                  if (args.probe or args.probe_body) and not is_scam else [])
         findings, kind, why, hdr = audit(msg, text, probed)
         report = dict(
             generated_utc=datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
