@@ -1,6 +1,6 @@
 ---
 name: spamcheck
-description: Audit one email's unsubscribe machinery and say what is actually broken and where to complain. Use when a sender's unsubscribe link 404s or does nothing, when asked whether an email breaks CAN-SPAM, when someone wants off a list that keeps mailing them, or when a complaint to the FTC, the FEC, a state AG or a sending platform needs the evidence assembled. Reads a saved message or a pasted one; never touches a mailbox.
+description: Audit one email's or text message's opt-out and say what is actually broken, whether it is a scam, and where to report it. Use when a sender's unsubscribe link 404s or does nothing, when asked whether an email breaks CAN-SPAM or a text breaks the TCPA, when texts keep coming after STOP, when a text looks like a toll, package or bank scam, or when a complaint to the FTC, FCC, FEC, a state AG or a sending platform needs the evidence assembled. Reads a saved or pasted message; never touches a mailbox or a phone.
 ---
 
 # spamcheck
@@ -67,6 +67,21 @@ most useful signal in here.
 6. **A physical postal address** in the body, which commercial mail is required to
    carry and political mail is not.
 7. **A "paid for by" disclaimer**, but only on messages it classifies as political.
+
+## Phishing is checked first
+
+Before any unsubscribe audit, every email is checked for the signs of a scam: a
+failing DMARC (or SPF and DKIM both failing) in the receiving server's
+`Authentication-Results`, a brand name in the From display name sent from someone
+else's domain, a Reply-To on a different domain, a link whose visible text names one
+site while it opens another, risky link hosts, and phishing bait in the copy.
+
+When those add up, the message is classified **scam**, gets no CAN-SPAM findings, and
+**nothing is probed, not even with `--probe`**: a phisher's unsubscribe link is just
+another link to their server. The report gives the FTC's advice instead: do not click
+or reply, forward to reportphishing@apwg.org, report at ReportFraud.ftc.gov, delete.
+A single signal (say, a Reply-To mismatch from a mailing service) is reported as an
+observation without changing the classification.
 
 ## Record the click, or the best rule in the statute is unusable
 
@@ -137,10 +152,43 @@ Three things to say out loud before anyone files anything:
    the sender has **10 business days** to stop. 15 U.S.C. 7704(a)(4)(A)(i). Mail
    arriving after that needs no argument about outages. Date the click.
 
+## Text messages
+
+A text runs under different law than email: the TCPA and the FCC's rules, not
+CAN-SPAM, and unlike CAN-SPAM a recipient can sue. Paste the text; give the sender
+and the arrival time so the time-based checks can run.
+
+```bash
+pbpaste | python3 scripts/spamcheck.py --sms --sender 22395 --received "2026-09-23 21:40"
+python3 scripts/spamcheck.py --sms-file text.txt --sender "+1 212 555 0142"
+python3 scripts/spamcheck.py --opt-out 22395 --note "replied STOP"
+```
+
+**Links in a text are never opened**, not with `--probe`, not with `--probe-body`. A
+scam text exists to be tapped, and any request confirms the number is live. The report
+lists each link with what makes it risky: a shortener, a raw IP, punycode, a brand name
+inside someone else's domain, a pile of hyphens, a throwaway TLD.
+
+It classifies the text first, the same way it classifies email, plus one more class:
+
+- **scam**: toll, package, bank or prize bait. The advice changes completely: do not tap,
+  do not reply (not even STOP, which confirms the number), forward to 7726, report to
+  the FTC, delete. Unsubscribe law is irrelevant to a fraudster.
+- **commercial**: checks for an opt-out instruction, a named sender, the 8 a.m. to 9 p.m.
+  window for sales texts, and, once you record your STOP, the 10 business day honor window.
+- **political**: the Do Not Call registry and quiet hours do not reach it; the
+  autodialer rule still does, and peer-to-peer campaign texts mostly fall outside it.
+
+It also reads the sender: short code, toll-free, ordinary number, foreign number, or an
+email address pushed through a carrier gateway, which is a scam tell.
+
+Record your STOP reply with `--opt-out <number>` the same way as an email click. Every
+citation, quoted from its primary source, is in [`references/texts.md`](references/texts.md).
+
 ## What it will not do
 
-- It will not open a mailbox. Feed it a file or a paste.
-- It will not send a complaint, an unsubscribe request, or any mail.
+- It will not open a mailbox or read a phone. Feed it a file or a paste.
+- It will not send a complaint, an unsubscribe request, a STOP reply, or any mail.
 - It will not tell you that you have a case. It assembles evidence and names the
   rule that the evidence bears on. Whether to file is yours.
 - A single failed probe is not proof. Re-run before relying on it; transient network

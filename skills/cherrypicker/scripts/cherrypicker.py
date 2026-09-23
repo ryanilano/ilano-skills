@@ -129,109 +129,140 @@ def parse_units(path):
 def render_unit(unit):
     md = _markdown.Markdown(extensions=['tables', 'fenced_code', 'sane_lists'])
     body = re.sub(r'</?(' + '|'.join(_QUOTE_TAGS) + r')[^>]*>', '', unit['body']).strip()
-    return md.convert(body)
+    out = md.convert(body)
+    # Copy sits under the row's h2 and the unit's h3, so its own headings start at h4.
+    return re.sub(r'<(/?)h([1-6])\b',
+                  lambda m: '<%sh%d' % (m.group(1), min(int(m.group(2)) + 3, 6)), out)
 
 
 # ---------------------------------------------------------------- template
 
 _CSS = """
+/* Palette from the author's editorial docs: cream and ink in light, navy and
+   amber in dark. Follows the system; data-theme="light|dark" on <html>
+   overrides it (the Theme button sets that and remembers it). */
 :root{
-  color-scheme:light;
-  --bg:#ffffff; --panel:#ffffff; --panel2:#f7f7f5; --line:#e3e3dd;
-  --tx:#14161a; --tx2:#55606e; --tx3:#8a939f;
+  color-scheme:light dark;
+  --bg:#FBF8F1; --surface:#F2EDDF; --surface-2:#F7F3E8; --hover:#EAE3D1;
+  --ink:#24211A; --ink-2:#514A38; --muted:#6B6450;
+  --rule:#DCD3BE; --rule-2:#C7BCA2;
+  --accent-text:#8A5300; --focus:#1D4ED8; --bar:#3468C0;
+  --a-ink:#1f5fcf; --b-ink:#6f42c1; --ok-ink:#15693d; --rw-ink:#a34a07; --cut-ink:#b3321f;
+  --bar-bg:rgba(251,248,241,.92);
   --a:#1f6feb; --b:#6f42c1; --ok:#1a7f4b; --rw:#b45309; --cut:#c0392b;
-  --band-bg:#f4f4f2; --band-line:#dcdcd6; --band-tx:#14161a; --band-tx2:#55606e;
-  --space-md:1rem; --space-xl:2rem; --space-2xl:3rem;
 }
-*{box-sizing:border-box}
-html{-webkit-text-size-adjust:100%}
-dl,dd{margin:0}
-body{margin:0;background:var(--bg);color:var(--tx);
-  font:16px/1.6 ui-sans-serif,-apple-system,"SF Pro Text",Inter,system-ui,sans-serif;
-  padding-bottom:6rem}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#101523; --surface:#182034; --surface-2:#141b2c; --hover:#1f2942;
+    --ink:#EDE9DE; --ink-2:#C6BFAB; --muted:#A8A08B;
+    --rule:#2B3450; --rule-2:#3d486b;
+    --accent-text:#F5A83C; --focus:#F5A83C; --bar:#5FA0EA;
+    --a-ink:#79a8ff; --b-ink:#b392f0; --ok-ink:#4cc38a; --rw-ink:#f5a83c; --cut-ink:#ff8a7a;
+    --bar-bg:rgba(16,21,35,.9);
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#101523; --surface:#182034; --surface-2:#141b2c; --hover:#1f2942;
+  --ink:#EDE9DE; --ink-2:#C6BFAB; --muted:#A8A08B;
+  --rule:#2B3450; --rule-2:#3d486b;
+  --accent-text:#F5A83C; --focus:#F5A83C; --bar:#5FA0EA;
+  --a-ink:#79a8ff; --b-ink:#b392f0; --ok-ink:#4cc38a; --rw-ink:#f5a83c; --cut-ink:#ff8a7a;
+  --bar-bg:rgba(16,21,35,.9);
+}
+:root[data-theme="light"]{color-scheme:light}
 
-.hero{max-width:980px;margin:0 auto;padding:2rem 1rem 0;text-align:center}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;scroll-padding-top:5rem}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font:1rem/1.6 ui-sans-serif,-apple-system,"SF Pro Text",Inter,system-ui,sans-serif;
+  padding-bottom:6rem}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px;border-radius:2px}
+.skip{position:absolute;left:-9999px;top:0;background:var(--ink);color:var(--bg);
+  padding:.6rem 1rem;z-index:100}
+.skip:focus{left:1rem;top:1rem}
+
+.hero{max-width:61.25rem;margin:0 auto;padding:2rem 1rem 0;text-align:center}
 .hero h1{font-family:ui-serif,"Iowan Old Style","Times New Roman",Georgia,serif;
   font-weight:700;letter-spacing:-.02em;line-height:1.08;
   font-size:clamp(1.7rem,4.6vw,3rem);margin:0 0 .6rem}
-.hero .kicker{color:var(--tx3);font-size:.9rem;margin:0 0 1.4rem}
-.impact-band{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
-  gap:var(--space-xl) var(--space-md);padding:var(--space-xl) var(--space-2xl);
-  background:var(--band-bg);border:1px solid var(--band-line);border-radius:5px;
-  margin:0 auto;max-width:980px}
-.metric-item{text-align:center;min-width:0}
-.metric-value{font-family:ui-serif,"Iowan Old Style","Times New Roman",Georgia,serif;
-  font-size:clamp(2rem,5vw,3.1rem);line-height:1.05;font-weight:400;color:var(--band-tx);
-  font-variant-numeric:tabular-nums;margin:0 0 .5rem;transition:color .2s}
-.metric-label{color:var(--band-tx2);max-width:320px;margin:0 auto;font-size:.875rem;line-height:1.5}
-.metric-item[data-k="b"] .metric-value{color:#6f42c1}
-.metric-item[data-k="left"] .metric-value{color:#6b7280}
+.hero .kicker{color:var(--muted);font-size:.9rem;margin:0 0 1.4rem}
+.impact-band{display:grid;grid-template-columns:repeat(auto-fit,minmax(11.25rem,1fr));
+  gap:2rem 1rem;padding:2rem 3rem;margin:0 auto;max-width:61.25rem;
+  background:var(--surface);border:1px solid var(--rule);border-radius:5px}
+.metric-item{display:flex;flex-direction:column-reverse;text-align:center;min-width:0}
+.metric-value{margin:0 0 .5rem;font-family:ui-serif,"Iowan Old Style","Times New Roman",Georgia,serif;
+  font-size:clamp(2rem,5vw,3.1rem);line-height:1.05;font-weight:400;color:var(--ink);
+  font-variant-numeric:tabular-nums}
+.metric-label{color:var(--ink-2);max-width:20rem;margin:0 auto;font-size:.875rem;line-height:1.5}
+.metric-item[data-k="a"] .metric-value{color:var(--a-ink)}
+.metric-item[data-k="b"] .metric-value{color:var(--b-ink)}
+.metric-item[data-k="left"] .metric-value{color:var(--muted)}
 
-.bar{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.92);
+.bar{position:sticky;top:0;z-index:50;background:var(--bar-bg);
   -webkit-backdrop-filter:saturate(1.6) blur(10px);backdrop-filter:saturate(1.6) blur(10px);
-  border-bottom:1px solid var(--line);margin-top:1.6rem;
+  border-bottom:1px solid var(--rule);margin-top:1.6rem;
   padding:.55rem max(1rem,env(safe-area-inset-left));
   display:flex;align-items:center;gap:.75rem;flex-wrap:wrap}
-.meter{flex:1;min-width:120px;height:6px;background:var(--panel2);border-radius:99px;overflow:hidden}
-.meter i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--a),var(--ok));transition:width .25s}
-.count{font-variant-numeric:tabular-nums;color:var(--tx2);font-size:.8rem;white-space:nowrap}
+.bar progress{flex:1;min-width:7.5rem;height:.375rem;border:0;border-radius:99px;
+  overflow:hidden;background:var(--surface);-webkit-appearance:none;appearance:none}
+.bar progress::-webkit-progress-bar{background:var(--surface);border-radius:99px}
+.bar progress::-webkit-progress-value{background:linear-gradient(90deg,var(--bar),var(--ok));border-radius:99px}
+.bar progress::-moz-progress-bar{background:linear-gradient(90deg,var(--bar),var(--ok))}
+.count{font-variant-numeric:tabular-nums;color:var(--ink-2);font-size:.8rem;white-space:nowrap}
 .bar .acts{display:flex;gap:.4rem;margin-left:auto;flex-wrap:wrap}
-.bar button{background:var(--panel2);color:var(--tx);border:1px solid var(--line);
-  border-radius:8px;padding:.4rem .7rem;font:inherit;font-size:.8rem;cursor:pointer;
+.bar button{background:var(--surface);color:var(--ink);border:1px solid var(--rule);
+  border-radius:8px;padding:.4rem .7rem;font:inherit;font-size:.8rem;cursor:pointer;line-height:1.4;
   -webkit-tap-highlight-color:transparent}
-.bar button:hover,.loadlbl:hover{border-color:#c9c9c1;background:#f0f0ec}
-.loadlbl{background:var(--panel2);color:var(--tx);border:1px solid var(--line);
-  border-radius:8px;padding:.4rem .7rem;font-size:.8rem;cursor:pointer;line-height:1.4}
-#btn-save.need{border-color:var(--rw);color:var(--rw);font-weight:600}
+.bar button:hover{border-color:var(--rule-2);background:var(--hover)}
+#btn-save.need{border-color:var(--rw);color:var(--accent-text);font-weight:600}
 #btn-save.need::after{content:" \u25cf"}
-.saved{color:var(--ok);font-size:.75rem;opacity:0;transition:opacity .3s}
-.saved.on{opacity:1}
+.saved{color:var(--ok-ink);font-size:.75rem;visibility:hidden}
+.saved.on{visibility:visible}
+.vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 
 main{padding:1.25rem max(1rem,env(safe-area-inset-left))}
-.row{background:var(--panel);border:1px solid var(--line);border-radius:14px;
-  box-shadow:0 1px 2px rgba(20,22,26,.04);margin:0 0 1.1rem;overflow:hidden;scroll-margin-top:70px}
+.row{background:var(--bg);border:1px solid var(--rule);border-radius:14px;
+  box-shadow:0 1px 2px rgba(0,0,0,.06);margin:0 0 1.1rem;overflow:hidden;scroll-margin-top:4.375rem}
 .row-h{position:relative;display:flex;align-items:center;gap:1rem;flex-wrap:wrap;
-  padding:.8rem 1rem;background:var(--panel2);border-bottom:1px solid var(--line)}
+  padding:.8rem 1rem;background:var(--surface);border-bottom:1px solid var(--rule)}
 .row-h h2{margin:0;font-weight:500;font-size:.95rem;letter-spacing:-.01em;
   font-family:ui-monospace,SFMono-Regular,Menlo,"Courier New",monospace;
-  background:#000;color:#fff;padding:.25rem .6rem;border-radius:3px;
+  background:var(--ink);color:var(--bg);padding:.25rem .6rem;border-radius:3px;
   text-transform:lowercase}
 .picker{display:flex;gap:.5rem;margin-left:auto;flex-wrap:wrap}
-.picker button{width:120px;height:38px;border:0;border-radius:5px;padding:0;
-  font:inherit;font-size:.8rem;font-weight:600;color:#fff;cursor:pointer;opacity:.42;
-  transition:opacity .15s, box-shadow .15s;
+.picker button{width:7.5rem;min-height:2.375rem;border:2px solid var(--k-ink);border-radius:5px;
+  padding:.2rem .4rem;font:inherit;font-size:.8rem;font-weight:600;cursor:pointer;
+  background:var(--bg);color:var(--k-ink);transition:box-shadow .15s;
   -webkit-tap-highlight-color:transparent}
-.picker button:hover{opacity:.6}
-.picker button:focus-visible{outline:3px solid #000;outline-offset:3px}
-.picker [data-p="a"]{background:var(--a);
+.picker button:hover{background:var(--hover)}
+.picker [data-p="a"]{--k:var(--a);--k-ink:var(--a-ink);
   position:absolute;top:50%;right:50%;margin-right:.3rem;transform:translateY(-50%)}
-.picker [data-p="b"]{background:var(--b);
+.picker [data-p="b"]{--k:var(--b);--k-ink:var(--b-ink);
   position:absolute;top:50%;left:50%;margin-left:.3rem;transform:translateY(-50%)}
-.picker [data-p="y"]{background:var(--ok)}
-.picker [data-p="r"]{background:var(--rw)}
-.picker [data-p="n"]{background:var(--cut)}
-.row[data-pick="r"] .picker [data-p="r"]{opacity:1;box-shadow:0 0 0 2px #fff,0 0 0 4px #14161a}
-.row[data-pick="r"] .cols{opacity:.5}
+.picker [data-p="y"]{--k:var(--ok);--k-ink:var(--ok-ink)}
+.picker [data-p="r"]{--k:var(--rw);--k-ink:var(--rw-ink)}
+.picker [data-p="n"]{--k:var(--cut);--k-ink:var(--cut-ink)}
+.picker button[aria-pressed="true"]{background:var(--k);border-color:var(--k);color:#fff;
+  box-shadow:0 0 0 2px var(--bg),0 0 0 4px var(--ink)}
 
 /* Both panel */
-.panel{display:none;padding:.9rem 1rem;background:#fbfbf9;border-bottom:1px solid var(--line)}
+.panel{display:none;padding:.9rem 1rem;background:var(--surface-2);border-bottom:1px solid var(--rule)}
 .row.open .panel{display:block}
-.row.open .modes{display:none}
-.row.combine .modes{display:flex}
-.panel h3{margin:0 0 .5rem;font-size:.72rem;text-transform:uppercase;letter-spacing:.07em;color:var(--tx3)}
-.modes{display:flex;gap:.4rem;flex-wrap:wrap;margin-bottom:.8rem}
-.modes button{background:#fff;border:1px solid var(--line);border-radius:99px;
-  padding:.35rem .8rem;font:inherit;font-size:.78rem;color:var(--tx2);cursor:pointer}
-.modes button:hover{border-color:#c9c9c1;color:var(--tx)}
-.row[data-pick="u"] .modes [data-m="u"],
-.row[data-pick="g"] .modes [data-m="g"],
-.row[data-pick="f"] .modes [data-m="f"],
-.row[data-pick="s"] .modes [data-m="s"]{background:var(--ok);border-color:var(--ok);color:#fff;font-weight:600}
-.modes .hint{flex-basis:100%;font-size:.78rem;color:var(--tx2);margin:.2rem 0 0}
-.panel .rec{font-size:.85rem;color:var(--tx2);background:#fff;border:1px solid var(--line);
-  border-left:3px solid var(--a);border-radius:4px;padding:.55rem .7rem;margin:0 0 .8rem}
+.modes{display:none;border:0;padding:0;margin:0 0 .8rem;min-width:0}
+.row.combine .modes{display:block}
+.panel legend,.panel .note-l{display:block;padding:0;margin:0 0 .5rem;font-size:.72rem;
+  font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+.mode-btns{display:flex;gap:.4rem;flex-wrap:wrap}
+.modes button{background:var(--bg);border:1px solid var(--rule);border-radius:99px;
+  padding:.35rem .8rem;font:inherit;font-size:.78rem;color:var(--ink-2);cursor:pointer}
+.modes button:hover{border-color:var(--rule-2);color:var(--ink)}
+.modes button[aria-pressed="true"]{background:var(--ok);border-color:var(--ok);color:#fff;font-weight:600}
+.modes .hint{font-size:.78rem;color:var(--ink-2);margin:.5rem 0 0}
+.panel .rec{font-size:.85rem;color:var(--ink-2);background:var(--bg);border:1px solid var(--rule);
+  border-left:3px solid var(--muted);border-radius:4px;padding:.55rem .7rem;margin:0 0 .8rem}
 .panel .lead{display:inline-block;margin-left:.5rem;padding:.1rem .5rem;border-radius:99px;
-  border:1px solid var(--line);background:#fff;color:var(--tx2);font-size:.7rem;
+  border:1px solid var(--rule);background:var(--bg);color:var(--ink-2);font-size:.7rem;
   font-weight:600;letter-spacing:.02em;text-transform:uppercase;vertical-align:.08em}
 .panel .chip{display:inline-block;margin-right:.5rem;padding:.15rem .6rem;border-radius:4px;
   color:#fff;font-size:.72rem;font-weight:700;letter-spacing:.03em;text-transform:uppercase;
@@ -241,57 +272,49 @@ main{padding:1.25rem max(1rem,env(safe-area-inset-left))}
 .panel .chip[data-c="y"]{background:var(--ok)}
 .panel .chip[data-c="r"]{background:var(--rw)}
 .panel .chip[data-c="n"]{background:var(--cut)}
-.panel .rec{border-left-color:var(--tx3)}
-.panel textarea{width:100%;min-height:76px;background:#fff;color:var(--tx);
-  border:1px solid var(--line);border-radius:6px;padding:.55rem .7rem;
+.panel textarea{width:100%;min-height:4.75rem;background:var(--bg);color:var(--ink);
+  border:1px solid var(--rule);border-radius:6px;padding:.55rem .7rem;
   font:inherit;font-size:.88rem;resize:vertical}
-.panel textarea:focus{outline:2px solid var(--a);outline-offset:1px}
-.row[data-pick="y"] .cols,
-.row[data-pick="u"] .cols,.row[data-pick="g"] .cols,
-.row[data-pick="f"] .cols,.row[data-pick="s"] .cols{opacity:1}
-@media (max-width:560px){ .picker button{width:64px;height:34px} }
-.row[data-pick="a"] .picker [data-p="a"]{opacity:1;box-shadow:0 0 0 2px #fff,0 0 0 4px #14161a}
-.row[data-pick="b"] .picker [data-p="b"]{opacity:1;box-shadow:0 0 0 2px #fff,0 0 0 4px #14161a}
-.row[data-pick="y"] .picker [data-p="y"],
-.row[data-pick="u"] .picker [data-p="y"],
-.row[data-pick="g"] .picker [data-p="y"],
-.row[data-pick="f"] .picker [data-p="y"],
-.row[data-pick="s"] .picker [data-p="y"]{opacity:1;box-shadow:0 0 0 2px #fff,0 0 0 4px #14161a}
-.row[data-pick="n"] .picker [data-p="n"]{opacity:1;box-shadow:0 0 0 2px #fff,0 0 0 4px #14161a}
-.row[data-pick="n"] .cols{opacity:.35}
-.row[data-pick="a"] .col[data-side="b"],
-.row[data-pick="b"] .col[data-side="a"]{opacity:.4}
+.panel textarea::placeholder{color:var(--muted);opacity:1}
+@media (max-width:35em){ .picker button{width:4rem;min-height:2.125rem} }
 
 .cols{display:grid;grid-template-columns:1fr 1fr}
-.col{padding:.9rem 1rem;min-width:0;transition:opacity .2s}
-.col+.col{border-left:1px solid var(--line)}
+.col{padding:.9rem 1rem;min-width:0}
+.col[data-state="out"]{background:var(--surface-2)}
+.col-h{display:flex;gap:.6rem;align-items:baseline;margin:0 0 .6rem;font-size:.78rem}
+.col-name{font-weight:700;color:var(--ink)}
+.col[data-side="a"] .col-name{color:var(--a-ink)}
+.col[data-side="b"] .col-name{color:var(--b-ink)}
+.col-state{color:var(--ink-2);font-weight:600;text-transform:uppercase;letter-spacing:.06em;font-size:.7rem}
+.col-state:empty{display:none}
+.col+.col{border-left:1px solid var(--rule)}
 .col[data-side="a"]{border-top:3px solid var(--a)}
 .col[data-side="b"]{border-top:3px solid var(--b)}
-.col.empty{display:flex;align-items:center;justify-content:center}
-.none{color:var(--tx3);font-style:italic;font-size:.85rem;margin:0}
-.blk+.blk{margin-top:1rem;padding-top:1rem;border-top:1px dashed var(--line)}
-.blk-h{font-size:.7rem;text-transform:uppercase;letter-spacing:.07em;color:var(--tx3);
-  margin-bottom:.45rem;display:flex;gap:.5rem;align-items:baseline}
-.cc{margin-left:auto;font-variant-numeric:tabular-nums;opacity:.7}
-.prose{font-size:.93rem;color:#3b4453}
+.col.empty .none{padding:1rem 0;text-align:center}
+.none{color:var(--muted);font-style:italic;font-size:.85rem;margin:0}
+.blk+.blk{margin-top:1rem;padding-top:1rem;border-top:1px dashed var(--rule)}
+.blk-h{margin:0 0 .45rem;font-size:.7rem;font-weight:500;text-transform:uppercase;
+  letter-spacing:.07em;color:var(--muted);display:flex;gap:.5rem;align-items:baseline}
+.cc{margin-left:auto;font-variant-numeric:tabular-nums}
+.prose{font-size:.93rem;color:var(--ink-2)}
 .prose p{margin:0 0 .7rem}
 .prose p:last-child{margin-bottom:0}
-.prose strong{color:#14161a;font-weight:640}
-.prose a{color:var(--a);text-decoration:underline;text-underline-offset:.15em}
-.prose h2,.prose h3,.prose h4{font-size:.9rem;margin:.9rem 0 .4rem;color:#14161a}
+.prose strong{color:var(--ink);font-weight:640}
+.prose a{color:var(--accent-text);text-decoration:underline;text-underline-offset:.15em}
+.prose h2,.prose h3,.prose h4{font-size:.9rem;margin:.9rem 0 .4rem;color:var(--ink)}
 .prose ul,.prose ol{margin:0 0 .7rem;padding-left:1.2rem}
 .prose li{margin-bottom:.25rem}
-.prose code{background:#f5f5f1;border:1px solid var(--line);border-radius:4px;
+.prose code{background:var(--surface);border:1px solid var(--rule);border-radius:4px;
   padding:.08em .35em;font-size:.85em;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
-.prose pre{background:#f5f5f1;border:1px solid var(--line);border-radius:8px;padding:.7rem;overflow:auto}
+.prose pre{background:var(--surface);border:1px solid var(--rule);border-radius:8px;padding:.7rem;overflow:auto}
 .prose pre code{border:0;background:none;padding:0}
-.prose blockquote{margin:.6rem 0;padding-left:.8rem;border-left:3px solid var(--line);color:var(--tx2)}
+.prose blockquote{margin:.6rem 0;padding-left:.8rem;border-left:3px solid var(--rule);color:var(--ink-2)}
 .prose table{width:100%;border-collapse:collapse;font-size:.78rem;margin:0 0 .7rem;display:block;overflow-x:auto}
-.prose th,.prose td{border:1px solid var(--line);padding:.35rem .5rem;text-align:left;vertical-align:top}
-.prose th{background:var(--panel2);color:#14161a;font-weight:600}
+.prose th,.prose td{border:1px solid var(--rule);padding:.35rem .5rem;text-align:left;vertical-align:top}
+.prose th{background:var(--surface);color:var(--ink);font-weight:600}
 .prose img{max-width:100%}
 
-@media (max-width:820px){
+@media (max-width:51.25em){
   .cols{grid-template-columns:1fr}
   .col+.col{border-left:0;border-top:3px solid var(--b)}
   .row-h h2{width:100%}
@@ -299,20 +322,30 @@ main{padding:1.25rem max(1rem,env(safe-area-inset-left))}
 }
 /* Centred A/B buttons collide with Both/Rewrite/Cut below ~1060px (measured:
    B sits under Both at 834 and 1024), so they rejoin the flex row there. */
-@media (max-width:1080px){
+@media (max-width:67.5em){
   .picker [data-p="a"],.picker [data-p="b"]{position:static;transform:none;margin:0}
 }
 
-dialog{background:var(--panel);color:var(--tx);border:1px solid var(--line);
-  border-radius:14px;padding:0;max-width:min(680px,92vw);width:100%}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{transition:none!important;scroll-behavior:auto!important}
+}
+@media (forced-colors:active){
+  .picker button[aria-pressed="true"],.modes button[aria-pressed="true"]{
+    outline:3px solid Highlight;outline-offset:2px}
+  .bar progress{border:1px solid CanvasText}
+}
+
+dialog{background:var(--bg);color:var(--ink);border:1px solid var(--rule);
+  border-radius:14px;padding:0;max-width:min(42.5rem,92vw);width:100%}
 dialog::backdrop{background:#0006;backdrop-filter:blur(2px)}
-.dlg-h{display:flex;align-items:center;gap:1rem;padding:.8rem 1rem;border-bottom:1px solid var(--line)}
-.dlg-h h3{margin:0;font-size:.95rem}
-.dlg-h button{background:var(--panel2);color:var(--tx);border:1px solid var(--line);
+.dlg-h{display:flex;align-items:center;gap:1rem;padding:.8rem 1rem;border-bottom:1px solid var(--rule)}
+.dlg-h h2{margin:0;font-size:.95rem}
+.dlg-h button{background:var(--surface);color:var(--ink);border:1px solid var(--rule);
   border-radius:8px;padding:.4rem .7rem;font:inherit;font-size:.8rem;cursor:pointer}
 .dlg-b{padding:1rem;max-height:60vh;overflow:auto}
-textarea{width:100%;min-height:260px;background:#f7f7f5;color:var(--tx);border:1px solid var(--line);
-  border-radius:8px;padding:.7rem;font:13px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;resize:vertical}
+.dlg-b textarea{width:100%;min-height:16.25rem;background:var(--surface);color:var(--ink);
+  border:1px solid var(--rule);border-radius:8px;padding:.7rem;
+  font:.8125rem/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;resize:vertical}
 """
 
 # Picks live in the URL hash rather than localStorage: artifact sandboxes block
@@ -334,14 +367,43 @@ let picks = new Array(N).fill('-');
 let notes = new Array(N).fill('');
 let handle = null, dirty = false;
 
-/* ---- persistence: picks in the URL, typed notes in a sidecar json ---- */
+/* ---- persistence: hot-saved into the URL hash (picks and notes) and mirrored
+   to localStorage where the browser allows it; Save notes writes a file ---- */
+const LS_KEY = 'cherrypicker:' + location.pathname;
+function b64e(s){
+  return btoa(unescape(encodeURIComponent(s))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+}
+function b64d(s){
+  return decodeURIComponent(escape(atob(s.replace(/-/g,'+').replace(/_/g,'/'))));
+}
 function readHash(){
-  const m = /[#&]p=([abyugfsrn\-]+)/.exec(location.hash||'');
+  const h = location.hash||'';
+  const m = /[#&]p=([abyugfsrn\-]+)/.exec(h);
   if(m && m[1].length===N) picks = m[1].split('');
+  const n = /[#&]n=([A-Za-z0-9_\-]+)/.exec(h);
+  if(n){
+    try{ const a=JSON.parse(b64d(n[1])); if(Array.isArray(a) && a.length===N) notes=a; }catch(e){}
+  }
+  return !!m;
+}
+function readLocal(){
+  try{
+    const j = JSON.parse(localStorage.getItem(LS_KEY)||'null');
+    if(!j) return;
+    if(j.picks && j.picks.length===N) picks=j.picks.split('');
+    if(Array.isArray(j.notes) && j.notes.length===N) notes=j.notes;
+  }catch(e){}
 }
 function writeHash(){
-  history.replaceState(null,'',location.pathname+location.search+'#p='+picks.join(''));
+  let h = '#p='+picks.join('');
+  if(notes.some(x=>x)) h += '&n='+b64e(JSON.stringify(notes));
+  history.replaceState(null,'',location.pathname+location.search+h);
+  try{ localStorage.setItem(LS_KEY, payload()); }catch(e){}
   flash('saved');
+}
+function announce(t){
+  const el=document.getElementById('live');
+  el.textContent=''; setTimeout(()=>{ el.textContent=t; },50);
 }
 function flash(t){
   const el=document.getElementById('saved');
@@ -352,18 +414,20 @@ function payload(){
   return JSON.stringify({v:2, picks:picks.join(''), notes:notes, titles:TITLES}, null, 2);
 }
 async function save(){
-  if(handle){
-    try{
-      const w = await handle.createWritable();
-      await w.write(payload()); await w.close();
-      dirty=false; flash('saved to file'); return;
-    }catch(e){ handle=null; }
+  // Once a file is chosen, every hot save also writes it. Without one, the
+  // URL hash and localStorage already hold everything, so nothing is lost.
+  if(!handle) return;
+  try{
+    const w = await handle.createWritable();
+    await w.write(payload()); await w.close();
+    dirty=false; flash('saved to file'); announce('Notes saved to file');
+  }catch(e){
+    handle=null; dirty=true;
+    document.getElementById('btn-save').classList.add('need');
   }
-  dirty = true;
-  document.getElementById('btn-save').classList.add('need');
 }
 let saveT;
-function autosave(){ clearTimeout(saveT); saveT=setTimeout(save,600); }
+function autosave(){ clearTimeout(saveT); saveT=setTimeout(()=>{ writeHash(); save(); },400); }
 
 document.getElementById('btn-save').addEventListener('click', async ()=>{
   if(window.showSaveFilePicker){
@@ -382,8 +446,9 @@ document.getElementById('btn-save').addEventListener('click', async ()=>{
   a.download=(location.pathname.split('/').pop()||'cherrypicker').replace(/\.html?$/,'')+'.notes.json';
   a.click(); URL.revokeObjectURL(a.href);
   dirty=false; document.getElementById('btn-save').classList.remove('need');
-  flash('downloaded');
+  flash('downloaded'); announce('Notes downloaded');
 });
+document.getElementById('btn-load').addEventListener('click', ()=>document.getElementById('file-load').click());
 document.getElementById('file-load').addEventListener('change', ev=>{
   const f=ev.target.files[0]; if(!f) return;
   const rd=new FileReader();
@@ -392,7 +457,7 @@ document.getElementById('file-load').addEventListener('change', ev=>{
       const j=JSON.parse(rd.result);
       if(j.picks && j.picks.length===N) picks=j.picks.split('');
       if(Array.isArray(j.notes) && j.notes.length===N) notes=j.notes;
-      paint(); writeHash(); flash('loaded');
+      paint(); writeHash(); flash('loaded'); announce('Notes loaded');
     }catch(e){ alert('Could not read that file.'); }
   };
   rd.readAsText(f); ev.target.value='';
@@ -400,18 +465,38 @@ document.getElementById('file-load').addEventListener('change', ev=>{
 window.addEventListener('beforeunload', e=>{ if(dirty){ e.preventDefault(); e.returnValue=''; } });
 
 /* ---- painting ---- */
+function colState(p, side){
+  if(p==='-') return '';
+  if(p==='a' || p==='b') return p===side ? 'Chosen' : 'Not chosen';
+  if(p==='r') return 'To rewrite';
+  if(p==='n') return 'Cut';
+  return 'Combined';
+}
 function paint(){
   document.querySelectorAll('.row').forEach(r=>{
     const i=+r.dataset.row, p=picks[i];
     if(p==='-') r.removeAttribute('data-pick'); else r.dataset.pick=p;
     r.classList.toggle('open', p!=='-');
     r.classList.toggle('combine', BOTH.indexOf(p)>=0);
+    r.querySelectorAll('.picker button').forEach(b=>{
+      const on = b.dataset.p===p || (b.dataset.p==='y' && BOTH.indexOf(p)>=0);
+      b.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+    r.querySelectorAll('.modes button').forEach(b=>{
+      b.setAttribute('aria-pressed', b.dataset.m===p ? 'true' : 'false');
+    });
+    r.querySelectorAll('.col').forEach(c=>{
+      const side=c.dataset.side, st=colState(p, side);
+      c.dataset.state = st==='Chosen' ? 'in' : (st ? 'out' : '');
+      if(st==='Combined') c.dataset.state='in';
+      c.querySelector('.col-state').textContent=st;
+    });
     const ta=r.querySelector('.panel textarea');
     if(ta && ta.value!==notes[i]) ta.value=notes[i];
   });
   const done=picks.filter(p=>p!=='-').length;
   document.getElementById('count').textContent=done+' / '+N;
-  document.getElementById('bar').style.width=(done/N*100)+'%';
+  document.getElementById('bar').value=done;
   const na=picks.filter(p=>p==='a').length, nb=picks.filter(p=>p==='b').length;
   document.getElementById('m-a').textContent=na;
   document.getElementById('m-b').textContent=nb;
@@ -430,7 +515,6 @@ document.querySelectorAll('.picker button').forEach(b=>{
       picks[i] = (picks[i]===v) ? '-' : v;
     }
     paint(); writeHash();
-    if(picks[i]!=='-' && v!=='y') row.querySelector('.panel textarea').focus();
   });
 });
 document.querySelectorAll('.modes button').forEach(b=>{
@@ -443,7 +527,6 @@ document.querySelectorAll('.modes button').forEach(b=>{
 document.querySelectorAll('.panel textarea').forEach(ta=>{
   ta.addEventListener('input', ()=>{
     notes[+ta.closest('.row').dataset.row]=ta.value;
-    document.getElementById('btn-save').classList.add('need');
     autosave();
   });
 });
@@ -451,19 +534,23 @@ document.querySelectorAll('.panel textarea').forEach(ta=>{
 /* ---- nav ---- */
 document.getElementById('btn-next').addEventListener('click', ()=>{
   const i=picks.findIndex(p=>p==='-');
-  if(i>=0) document.getElementById('r'+i).scrollIntoView({behavior:'smooth',block:'start'});
+  if(i<0){ announce('Every section is decided'); return; }
+  const calm = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  document.getElementById('r'+i).scrollIntoView({behavior: calm ? 'auto' : 'smooth', block:'start'});
+  document.getElementById('r'+i+'-t').focus({preventScroll:true});
 });
 document.getElementById('btn-clear').addEventListener('click', ()=>{
   if(!confirm('Clear all picks and notes?')) return;
   picks=new Array(N).fill('-'); notes=new Array(N).fill('');
-  paint(); writeHash(); autosave();
+  paint(); writeHash(); autosave(); announce('All picks and notes cleared');
 });
 
 /* ---- export ---- */
 function colText(i, side){
   const el=document.querySelector('#r'+i+' .col[data-side="'+side+'"]');
   if(!el || el.classList.contains('empty')) return '(not in this file)';
-  return el.innerText.replace(/\n{3,}/g,'\n\n').trim();
+  return Array.from(el.querySelectorAll('.blk')).map(b=>b.innerText).join('\n\n')
+    .replace(/\n{3,}/g,'\n\n').trim();
 }
 document.getElementById('btn-out').addEventListener('click', ()=>{
   let t='# Copy merge, decisions\n\n';
@@ -511,27 +598,54 @@ document.getElementById('btn-copy').addEventListener('click',()=>{
   ta.select(); ta.setSelectionRange(0,999999);
   try{ document.execCommand('copy'); }catch(e){}
   if(navigator.clipboard) navigator.clipboard.writeText(ta.value).catch(()=>{});
+  announce('Decisions copied');
 });
 
-readHash(); paint();
+/* ---- theme: follow the system, or pin light/dark via data-theme ---- */
+const THEME_KEY='cherrypicker:theme', THEMES=['auto','light','dark'];
+function applyTheme(t){
+  if(t==='auto') document.documentElement.removeAttribute('data-theme');
+  else document.documentElement.dataset.theme=t;
+  document.getElementById('btn-theme').textContent='Theme: '+t[0].toUpperCase()+t.slice(1);
+}
+let theme='auto';
+try{ theme=localStorage.getItem(THEME_KEY)||'auto'; }catch(e){}
+if(THEMES.indexOf(theme)<0) theme='auto';
+applyTheme(theme);
+document.getElementById('btn-theme').addEventListener('click', ()=>{
+  theme=THEMES[(THEMES.indexOf(theme)+1)%THEMES.length];
+  applyTheme(theme);
+  try{ localStorage.setItem(THEME_KEY, theme); }catch(e){}
+});
+
+// A resume link wins; a bare URL falls back to this browser's last hot save.
+if(readHash()){ paint(); } else { readLocal(); paint(); if(picks.some(p=>p!=='-')||notes.some(x=>x)) writeHash(); }
 window.addEventListener('hashchange', ()=>{ readHash(); paint(); });
 """
 
 
-def _column(units, idxs, side):
+def _col_head(side, label):
+    return ('<header class="col-h"><span class="col-name">%s</span>'
+            '<span class="col-state" data-side="%s"></span></header>' % (html.escape(label), side))
+
+
+def _column(units, idxs, side, label):
     if not idxs:
-        return ('<div class="col empty" data-side="%s">'
-                '<p class="none">Not in this file</p></div>' % side)
+        return ('<article class="col empty" data-side="%s" aria-label="%s">%s'
+                '<p class="none">Not in this file</p></article>'
+                % (side, html.escape(label), _col_head(side, label)))
     blocks = []
     for i in idxs:
         u = units[i]
-        label = 'Pull quote' if u['kind'] == 'quote' else u['label']
+        name = 'Pull quote' if u['kind'] == 'quote' else u['label']
         blocks.append(
-            '<div class="blk"><div class="blk-h">%s<span class="cc">%dc</span></div>'
-            '<div class="prose">%s</div></div>'
-            % (html.escape(label), len(u['body']), render_unit(u))
+            '<section class="blk"><h3 class="blk-h">%s<span class="cc">%d'
+            '<span aria-hidden="true">c</span><span class="vh"> characters</span></span></h3>'
+            '<div class="prose">%s</div></section>'
+            % (html.escape(name), len(u['body']), render_unit(u))
         )
-    return '<div class="col" data-side="%s">%s</div>' % (side, ''.join(blocks))
+    return ('<article class="col" data-side="%s" aria-label="%s">%s%s</article>'
+            % (side, html.escape(label), _col_head(side, label), ''.join(blocks)))
 
 
 _MODE_NAME = {'u': 'Union', 'g': 'Graft', 'f': 'Form plus facts', 's': 'Sequence'}
@@ -548,52 +662,55 @@ def _pick_name(row, label_a, label_b):
     return 'Both, ' + _MODE_NAME[mode] if mode else 'Both'
 
 
+def _rec(row, label_a, label_b):
+    if not row.get('rec'):
+        return ''
+    chip = (('<span class="chip" data-c="%s">%s</span>'
+             % (row['pick'], html.escape(_pick_name(row, label_a, label_b))))
+            if row.get('pick') else '<strong>What I would do.</strong> ')
+    lead = (('<span class="lead">%s leads</span>'
+             % html.escape(label_a if row['win'] == 'a' else label_b))
+            if row.get('win') else '')
+    return '<p class="rec">%s%s%s</p>\n' % (chip, html.escape(row['rec']), lead)
+
+
+_ROW = '''<section class="row%(one)s" id="r%(n)d" data-row="%(n)d" aria-labelledby="r%(n)d-t">
+  <header class="row-h"><h2 id="r%(n)d-t" tabindex="-1">%(title)s</h2>
+    <div class="picker" role="group" aria-label="Choose a version for %(title)s">
+      <button type="button" data-p="a" aria-pressed="false">%(la)s</button>
+      <button type="button" data-p="b" aria-pressed="false">%(lb)s</button>
+      <button type="button" data-p="y" aria-pressed="false" title="Keep something from each">Both</button>
+      <button type="button" data-p="r" aria-pressed="false" title="Neither survives as written">Rewrite</button>
+      <button type="button" data-p="n" aria-pressed="false" title="Cut from this page">Cut</button>
+    </div></header>
+  <div class="panel">
+    <fieldset class="modes"><legend>How do these combine?</legend>
+      <div class="mode-btns">
+        <button type="button" data-m="u" aria-pressed="false">Union</button>
+        <button type="button" data-m="g" aria-pressed="false">Graft</button>
+        <button type="button" data-m="f" aria-pressed="false">Form plus facts</button>
+        <button type="button" data-m="s" aria-pressed="false">Sequence</button>
+      </div>
+      <p class="hint">Union and Sequence mean you edit it yourself. Both land in a worklist at the bottom of the export with the full text of each side ready to paste.</p>
+    </fieldset>
+    %(rec)s<label class="note-l" for="r%(n)d-note">What you want</label>
+    <textarea id="r%(n)d-note" placeholder="Anything you want done here. An idea, a line to keep, a warning."></textarea>
+  </div>
+  <div class="cols">%(col_a)s%(col_b)s</div>
+</section>'''
+
+
 def build(a_units, b_units, align, label_a, label_b, title):
     rows = []
     for n, row in enumerate(align):
-        one = ''
-        if not row.get('a'):
-            one = ' one-sided'
-        if not row.get('b'):
-            one = ' one-sided'
-        rows.append(
-            '<section class="row%s" id="r%d" data-row="%d">\n'
-            '  <header class="row-h"><h2>%s</h2>\n'
-            '    <div class="picker" role="group" aria-label="Choose version for %s">\n'
-            '      <button type="button" data-p="a" title="%s">%s</button>\n'
-            '      <button type="button" data-p="b" title="%s">%s</button>\n'
-            '      <button type="button" data-p="y" title="Both, combine them">Both</button>\n'
-            '      <button type="button" data-p="r" title="Rewrite, neither survives as written">Rewrite</button>\n'
-            '      <button type="button" data-p="n" title="Cut from this page">Cut</button>\n'
-            '    </div></header>\n'
-            '  <div class="panel">\n'
-            '    <h3>How do these combine?</h3>\n'
-            '    <div class="modes" role="group" aria-label="Combine mode">\n'
-            '      <button type="button" data-m="u">Union</button>\n'
-            '      <button type="button" data-m="g">Graft</button>\n'
-            '      <button type="button" data-m="f">Form plus facts</button>\n'
-            '      <button type="button" data-m="s">Sequence</button>\n'
-            '      <p class="hint">Union and Sequence mean you edit it yourself. Both land in a worklist at the bottom of the export with the full text of each side ready to paste.</p>\n'
-            '    </div>\n'
-            '    %s'
-            '    <label><h3>What you want</h3>\n'
-            '    <textarea placeholder="Anything you want done here. An idea, a line to keep, a warning."></textarea></label>\n'
-            '  </div>\n'
-            '  <div class="cols">%s%s</div>\n</section>'
-            % (one, n, n, html.escape(row['title']), html.escape(row['title']),
-               html.escape(label_a), html.escape(label_a),
-               html.escape(label_b), html.escape(label_b),
-               ('<p class="rec">%s%s%s</p>\n'
-                % (('<span class="chip" data-c="%s">%s</span>'
-                    % (row['pick'], html.escape(_pick_name(row, label_a, label_b))))
-                   if row.get('pick') else '<strong>What I would do.</strong> ',
-                   html.escape(row.get('rec','')),
-                   ('<span class="lead">%s leads</span>'
-                    % html.escape(label_a if row['win']=='a' else label_b))
-                   if row.get('win') else '')) if row.get('rec') else '',
-               _column(a_units, row.get('a') or [], 'a'),
-               _column(b_units, row.get('b') or [], 'b'))
-        )
+        rows.append(_ROW % {
+            'one': '' if (row.get('a') and row.get('b')) else ' one-sided',
+            'n': n, 'title': html.escape(row['title']),
+            'la': html.escape(label_a), 'lb': html.escape(label_b),
+            'rec': _rec(row, label_a, label_b),
+            'col_a': _column(a_units, row.get('a') or [], 'a', label_a),
+            'col_b': _column(b_units, row.get('b') or [], 'b', label_b),
+        })
 
     js = (_JS.replace('__TITLES__', json.dumps([r['title'] for r in align]))
              .replace('__RECS__', json.dumps([r.get('rec','') for r in align]))
@@ -605,52 +722,57 @@ def build(a_units, b_units, align, label_a, label_b, title):
 <html lang="en"><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
 <title>%(title)s</title>
 <style>%(css)s</style></head><body>
+<a class="skip" href="#main">Skip to sections</a>
 
 <header class="hero">
   <h1>%(title)s</h1>
   <p class="kicker">%(la)s &nbsp;vs&nbsp; %(lb)s &middot; %(n)d aligned sections &middot; pick per section</p>
   <dl class="impact-band">
     <div class="metric-item" data-k="a">
-      <dt class="metric-value" id="m-a">0</dt>
-      <dd class="metric-label">Sections where %(la)s wins the copy.</dd>
+      <dt class="metric-label">Sections where %(la)s wins the copy.</dt>
+      <dd class="metric-value" id="m-a">0</dd>
     </div>
     <div class="metric-item" data-k="b">
-      <dt class="metric-value" id="m-b">0</dt>
-      <dd class="metric-label">Sections where %(lb)s wins the copy.</dd>
+      <dt class="metric-label">Sections where %(lb)s wins the copy.</dt>
+      <dd class="metric-value" id="m-b">0</dd>
     </div>
     <div class="metric-item" data-k="left">
-      <dt class="metric-value" id="m-left">%(n)d</dt>
-      <dd class="metric-label">Still undecided, including merges and cuts.</dd>
+      <dt class="metric-label">Still undecided, including merges and cuts.</dt>
+      <dd class="metric-value" id="m-left">%(n)d</dd>
     </div>
   </dl>
 </header>
 
-<div class="bar">
-  <div class="meter" aria-hidden="true"><i id="bar"></i></div>
-  <span class="count" id="count">0 / %(n)d</span>
-  <span class="saved" id="saved">saved</span>
+<nav class="bar" aria-label="Progress and actions">
+  <label class="vh" for="bar">Sections decided</label>
+  <progress id="bar" max="%(n)d" value="0"></progress>
+  <output class="count" id="count" for="bar">0 / %(n)d</output>
+  <span class="saved" id="saved" aria-hidden="true">saved</span>
+  <p class="vh" id="live" role="status" aria-live="polite"></p>
   <div class="acts">
     <button type="button" id="btn-next">Next undecided</button>
     <button type="button" id="btn-save">Save notes</button>
-    <label class="loadlbl" for="file-load">Load notes</label>
-    <input type="file" id="file-load" accept="application/json,.json" hidden>
+    <button type="button" id="btn-load">Load notes</button>
+    <input type="file" id="file-load" accept="application/json,.json" hidden aria-hidden="true" tabindex="-1">
     <button type="button" id="btn-out">Export</button>
+    <button type="button" id="btn-theme">Theme: Auto</button>
     <button type="button" id="btn-clear">Reset</button>
   </div>
-</div>
+</nav>
 
-<main>
+<main id="main">
 %(rows)s
 </main>
 
-<dialog id="dlg">
-  <div class="dlg-h"><h3>Decisions</h3>
+<dialog id="dlg" aria-labelledby="dlg-t">
+  <header class="dlg-h"><h2 id="dlg-t">Decisions</h2>
     <button type="button" id="btn-copy" style="margin-left:auto">Copy</button>
     <button type="button" id="btn-close">Close</button>
-  </div>
-  <div class="dlg-b"><textarea id="out" readonly></textarea></div>
+  </header>
+  <div class="dlg-b"><textarea id="out" readonly aria-label="Exported decisions, markdown"></textarea></div>
 </dialog>
 
 <script>%(js)s</script>

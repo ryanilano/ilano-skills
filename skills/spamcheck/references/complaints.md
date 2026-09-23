@@ -25,6 +25,17 @@ exemption." Coverage turns on the message, not on who sent it.
 UNKNOWN. Whether the FTC has ever asserted jurisdiction over a candidate committee's
 email. Nothing in the guide, the Rule, or the 2005 notice addresses it.
 
+## If the message is phishing
+
+CONFIRMED, read 2026-09-23. The FTC's route for a phishing email: "If you got a
+phishing email, forward it to the Anti-Phishing Working Group at
+reportphishing@apwg.org. If you got a phishing text message, forward it to SPAM
+(7726). Report the phishing attempt to the FTC at ReportFraud.ftc.gov."
+<https://consumer.ftc.gov/articles/how-recognize-and-avoid-phishing-scams>
+
+Unsubscribe law does not help against a fraudster, which is why spamcheck skips the
+CAN-SPAM audit and every probe for a message it classifies as phishing.
+
 ## If the message is commercial
 
 CONFIRMED, the duty. The opt-out mechanism must be functioning, clearly and

@@ -1,0 +1,31 @@
+name: release
+
+# Every version that lands on main gets a tag and a GitHub Release, so the
+# repo page shows each one. The version comes from .claude-plugin/plugin.json;
+# a version that already has a tag is skipped, so re-runs are harmless.
+
+on:
+  push:
+    branches: [main]
+    paths: [.claude-plugin/plugin.json]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Publish the release for this version
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -e
+          v="v$(jq -r .version .claude-plugin/plugin.json)"
+          if gh release view "$v" >/dev/null 2>&1; then
+            echo "$v already released" >&2
+            exit 0
+          fi
+          git log -1 --format=%B "$GITHUB_SHA" > notes.md
+          gh release create "$v" --target "$GITHUB_SHA" --title "$v" --notes-file notes.md --latest

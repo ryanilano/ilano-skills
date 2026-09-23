@@ -6,5 +6,7 @@ note: >-
   (public AppView XRPC), and any RSS/Atom feed (Reddit .rss, blogs, bridges) into
   per-platform markdown + optional JSON. Friendly and public-only by design: no
   login, no auth circumvention, no scraping of logged-in content, no monitoring
-  loop. X/Twitter and LinkedIn are recorded as links, not scraped. Sibling to
+  loop. X comes only from public copies (the embed endpoint for named posts,
+  Thread Reader's public cache for threads and author pages, an RSS mirror the
+  user names); LinkedIn from its logged-out guest view. Sibling to
   docs-mirror; same scrape-kindly ethos (User-Agent, rate-limit).

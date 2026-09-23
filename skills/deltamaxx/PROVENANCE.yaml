@@ -1,0 +1,9 @@
+origin: original
+author: Ryan Ilano
+license: MIT
+note: >-
+  Instructions only, no scripts. The user's wallet (cards, credits, loyalty
+  status) is personal data and never ships with the skill: it lives at
+  $DELTAMAXX_WALLET or ~/.config/deltamaxx/wallet.md, seeded from
+  assets/wallet-template.md. Published 2026-09-23 from the author's personal
+  skill with the personal wallet removed.

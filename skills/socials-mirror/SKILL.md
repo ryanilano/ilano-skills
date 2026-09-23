@@ -1,6 +1,6 @@
 ---
 name: socials-mirror
-description: "Snapshot a public figure's public profiles (GitHub, Bluesky, any RSS/Atom feed, Reddit .rss, named X posts and threads) to local markdown in one command. Use when asked what someone has been posting, building, or writing, or when given an X, Twitter, tweet or thread link to read. Twitter means X: any twitter.com or x.com link, tweet, or thread goes through the X flags. Public data only; X timelines and LinkedIn are recorded as links. Not for a private individual."
+description: "Snapshot a public figure's public profiles (GitHub, Bluesky, any RSS/Atom feed, Reddit .rss, X posts and threads via embeds and Thread Reader) to local markdown in one command. Use when asked what someone has been posting, building, or writing, or when given an X, Twitter, tweet or thread link to read. Twitter means X: any twitter.com or x.com link, tweet, or thread goes through the X flags. Public data only; no login. Not for a private individual."
 ---
 
 # socials-mirror
@@ -35,7 +35,8 @@ the network.
 |---|---|---|
 | `--github` | `octocat`, `@octocat`, any `github.com/octocat/...` URL | `octocat` |
 | `--bsky` | `alice.com`, `alice` or `@alice` (bsky.social appended), a `bsky.app/profile/...` URL, a DID | handle or DID |
-| `--x` | `@jack`, `jack`, any x.com or twitter.com URL | `https://x.com/jack` |
+| `--x` | `@jack`, `jack`, any x.com or twitter.com URL | `https://x.com/jack`, then the author's threads from Thread Reader (`--x-threads N` pulls N in full, default 5, 0 lists only) and any `--x-rss-mirror` that answers |
+| `--x-rss-mirror` | a Nitter-style template, `https://mirror.example/{handle}/rss` (repeatable; `SOCIALS_X_RSS` comma list) | tried in order, first real feed wins. None built in: every public mirror checked 2026-09-23 was down or suspended (xcancel.com: HTTP 451) |
 | `--x-post` | `20`, `x.com/jack/status/20?s=21`, `twitter.com/i/web/status/20` (repeatable) | the post id, then its full text in `x.md` |
 | `--x-thread` | the root post URL or id | every post in the thread, in order, in `x-thread.md`, from Thread Reader's public cache. Not cached there: the root post alone, and stderr says so |
 | `--linkedin` | `jane`, `in/jane`, `company/acme`, any linkedin.com URL | `https://www.linkedin.com/in/jane` |
@@ -48,7 +49,7 @@ the network.
 | GitHub | public REST (unauth) | profile + up to 100 repos, sorted by last update |
 | BlueSky | public AppView XRPC (unauth) | profile + ~50 recent posts, full text |
 | RSS/Atom | plain fetch + parse | **the clean path for Reddit**: `https://www.reddit.com/user/<u>/.rss` or `/r/<sub>/.rss` carries full posts. Also blogs and RSS bridges |
-| X / Twitter | profile: link only. Named posts: public embed endpoint (unauth) | the timeline is not served without a login (syndication answers 429, Nitter is gone, RSSHub needs an account cookie). Name posts with `--x-post <url-or-id>` (repeatable) and each is mirrored in full: text, date, author, quoted post, media and links. `--x-thread <root>` pulls a whole thread from threadreaderapp.com's public cache when someone has unrolled it there. A public RSS bridge via `--rss` still works as a feed |
+| X / Twitter | profile: Thread Reader's public author page, plus an RSS mirror if you name one. Named posts: public embed endpoint (unauth) | the timeline is not served without a login (syndication answers 429, public Nitter mirrors are down, RSSHub needs an account cookie). Thread Reader's `threadreaderapp.com/user/<handle>` lists the ~15 most recent threads anyone unrolled there, and each thread is pulled from its public cache. Name posts with `--x-post <url-or-id>` (repeatable) and each is mirrored in full: text, date, author, quoted post, media and links. `--x-thread <root>` pulls a whole thread from threadreaderapp.com's public cache when someone has unrolled it there. A public RSS bridge via `--rss` still works as a feed |
 | LinkedIn | guest view (unauth) | the logged-out profile or company page (the copy search engines index): name, headline, about, location, followers from its JSON-LD, plus the handful of recent posts the page lists, each fetched from its public embed page for the full text. Capped at 8 posts, spaced, stops on a 999 or 429. The timeline beyond that is not public. If LinkedIn answers with its login wall, the link is recorded instead and stderr says so |
 
 ## Rules

@@ -49,11 +49,15 @@ Validate-then-repair for malformed LLM tool-call inputs, so open and cheaper mod
 
 ### [spamcheck](skills/spamcheck)
 
-You clicked unsubscribe and the mail kept coming. This reads one saved email and says whether that is the sender's fault, which law it touches, and who can act on it. It checks the hidden `List-Unsubscribe` header that powers the Unsubscribe button in Gmail and Apple Mail, probes the link for a real status code, and classifies the message commercial or political first, because CAN-SPAM only reaches commercial mail. It also dates your unsubscribe click, so the ten business day rule becomes usable. Never opens a mailbox, never sends anything. Plain-language walkthrough in [the skill README](skills/spamcheck/README.md); legal citations quoted from primary sources in `references/`.
+You clicked unsubscribe and the mail kept coming. This reads one saved email and says whether that is the sender's fault, which law it touches, and who can act on it. It checks the hidden `List-Unsubscribe` header that powers the Unsubscribe button in Gmail and Apple Mail, probes the link for a real status code, and classifies the message commercial or political first, because CAN-SPAM only reaches commercial mail. It also dates your unsubscribe click, so the ten business day rule becomes usable. Also reads text messages: spots toll, package and bank scams, checks STOP handling, quiet hours and the ten business day window under the TCPA, and never opens a link from a text. Never opens a mailbox, never sends anything. Plain-language walkthrough in [the skill README](skills/spamcheck/README.md); legal citations quoted from primary sources in `references/`.
 
 ### [cherrypicker](skills/cherrypicker)
 
-Two drafts of the same piece, one decision per section. Lays both side by side, aligned by what each passage does rather than by line, with A, B, Both (four ways to combine), Rewrite or Cut on every row, and exports the decisions plus a worklist of what still needs writing. Picks save into the page's URL, so it resumes on a tablet. Plain-language walkthrough in [the skill README](skills/cherrypicker/README.md).
+Two drafts of the same piece, one decision per section. Lays both side by side, aligned by what each passage does rather than by line, with A, B, Both (four ways to combine), Rewrite or Cut on every row, and exports the decisions plus a worklist of what still needs writing. Picks and notes hot-save into the page's URL as you go, so it resumes on a tablet. Plain-language walkthrough in [the skill README](skills/cherrypicker/README.md).
+
+### [deltamaxx](skills/deltamaxx)
+
+Which card for this purchase, and is that card worth its fee? Works out the delta, value back minus cost, from a wallet file you own: expiring credits first, then targeted offers, portals, card earn and loyalty status, all in cents. Counts overlapping perks once and credits you wouldn't spend as zero. Instructions only; no card numbers, balances or logins ever stored. Plain-language walkthrough in [the skill README](skills/deltamaxx/README.md).
 
 ## Vendored skills
 
