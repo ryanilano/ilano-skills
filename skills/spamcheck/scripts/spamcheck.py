@@ -8,6 +8,7 @@ they are off unless you pass --probe.
     python3 spamcheck.py --eml message.eml
     python3 spamcheck.py --paste < pasted.txt
     python3 spamcheck.py --url https://example.org/unsubscribe/abc --probe
+    pbpaste | python3 spamcheck.py --sms --sender 12345 --received "2026-09-23 22:14"
 
 Exit 0 = nothing actionable found. Exit 1 = at least one finding. Exit 2 = bad input.
 """
@@ -506,6 +507,311 @@ def audit(msg, text, probed):
     return f, kind, why, hdr
 
 
+# ---------------------------------------------------------------- text messages
+# A text is not an email: no headers, no List-Unsubscribe, and a different body
+# of law (the TCPA and the FCC's rules, not CAN-SPAM). Links in a text are never
+# requested, not even with --probe: a scam text exists to be clicked, and a
+# request confirms the number is live.
+
+SMS_SCAM_HINTS = [
+    "unpaid toll", "toll balance", "toll services", "e-zpass", "ezpass", "fastrak",
+    "sunpass", "txtag", "outstanding toll", "usps", "redelivery", "re-delivery",
+    "package could not be delivered", "delivery attempt", "address incomplete",
+    "your account has been suspended", "account locked", "verify your account",
+    "unusual activity", "final notice", "avoid penalties", "late fee",
+    "click the link", "reply y", "claim your", "you have won", "gift card",
+]
+SHORTENERS = ("bit.ly", "tinyurl.com", "t.co", "is.gd", "ow.ly", "rb.gy",
+              "cutt.ly", "shorturl.at", "tiny.cc", "rebrand.ly", "s.id")
+BRANDS = ("usps", "ups", "fedex", "dhl", "amazon", "apple", "paypal", "chase",
+          "wellsfargo", "bankofamerica", "ezpass", "e-zpass", "sunpass", "fastrak",
+          "irs", "netflix", "venmo", "zelle", "coinbase")
+OPTOUT_INSTR_RE = re.compile(
+    r"\b(?:reply|text|txt|send)\s+\"?stop\"?\b|\bstop\s*(?:2|to)\s*"
+    r"(?:end|quit|opt[\s-]?out|unsub\w*|cancel|stop)\b|\bstop\s*=\s*\w+", re.I)
+SMS_URL_RE = re.compile(
+    r"(?:https?://)?(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+"
+    r"(?:[a-z]{2,24}|xn--[a-z0-9-]+)(?::\d+)?(?:/[^\s<>\"')]*)?", re.I)
+BRAND_PREFIX_RE = re.compile(r"^\s*\[?([A-Z][\w&.' -]{1,30})\]?\s*:", re.M)
+
+
+def sender_kind(sender):
+    """Short code, toll-free, 10-digit long code, email gateway, or unknown."""
+    s = (sender or "").strip()
+    if not s:
+        return "unknown", "no sender given (pass --sender)"
+    if "@" in s:
+        return "email", "sent from an email address through a carrier gateway, " \
+                        "a common route for scam texts because it skips carrier " \
+                        "registration"
+    digits = re.sub(r"\D", "", s)
+    if 5 <= len(digits) <= 6 and not s.startswith("+"):
+        return "short-code", "5 or 6 digit short code, leased and vetted by carriers"
+    if len(digits) == 11 and digits.startswith("1"):
+        digits = digits[1:]
+    if len(digits) == 10 and digits[:3] in ("800", "833", "844", "855", "866",
+                                             "877", "888"):
+        return "toll-free", "toll-free number"
+    if len(digits) == 10:
+        return "long-code", "ordinary 10-digit number"
+    if len(digits) > 10:
+        return "international", "number longer than a US number, likely foreign"
+    return "unknown", "sender shape not recognized"
+
+
+def sms_links(text):
+    """Every link-like token in the text, with the reasons it looks risky."""
+    out = []
+    for m in SMS_URL_RE.finditer(text):
+        tok = m.group(0).rstrip(".,);]!?")
+        if "." not in tok or tok.lower().endswith((".m", ".p")):
+            continue
+        # A bare token needs a path or a plausible TLD to count; skip "e.g", times.
+        host = tok.split("://", 1)[-1].split("/", 1)[0].split(":", 1)[0].lower()
+        if re.fullmatch(r"[\d.]+", host) and host.count(".") != 3:
+            continue
+        why = []
+        if host in SHORTENERS:
+            why.append("link shortener hides the destination")
+        if re.fullmatch(r"\d{1,3}(?:\.\d{1,3}){3}", host):
+            why.append("raw IP address instead of a domain")
+        if "xn--" in host:
+            why.append("punycode domain, can imitate another name")
+        label = host.split(".")[-2] if host.count(".") >= 1 else host
+        for b in BRANDS:
+            if b in host.replace("-", "") and not (
+                    label.replace("-", "") == b and host.count(".") == 1):
+                why.append(f"contains the brand '{b}' but is not {b}'s own domain")
+                break
+        if host.count("-") >= 2:
+            why.append("several hyphens, typical of throwaway lookalike domains")
+        tld = host.rsplit(".", 1)[-1]
+        if tld in ("top", "xyz", "icu", "cfd", "sbs", "vip", "cc", "live", "shop",
+                   "click", "info", "buzz", "rest", "lol", "cyou", "bond"):
+            why.append(f".{tld} is a cheap TLD common in scam texts")
+        if not any(tok == o["link"] for o in out):
+            out.append({"link": tok, "host": host, "risk": why})
+    return out
+
+
+def classify_sms(text):
+    low = text.lower()
+    scam = [h for h in SMS_SCAM_HINTS if h in low]
+    if len(scam) >= 2 or (scam and sms_links(text)):
+        return "scam", f"{len(scam)} scam marker(s): " + ", ".join(scam[:4])
+    return classify(text)
+
+
+def sms_digits(s):
+    d = re.sub(r"\D", "", s or "")
+    return d[1:] if len(d) == 11 and d.startswith("1") else d
+
+
+def sms_ledger_match(sender):
+    want = sms_digits(sender)
+    if not want:
+        return None
+    hits = [r for r in ledger_rows()
+            if r.get("domain") and sms_digits(r["domain"]) == want]
+    return min(hits, key=lambda r: r["clicked"]) if hits else None
+
+
+def audit_sms(text, sender, received):
+    """Findings for one text message. `received` is a naive local datetime or None."""
+    f = []
+    kind, why = classify_sms(text)
+    skind, swhy = sender_kind(sender)
+    links = sms_links(text)
+
+    if kind == "scam":
+        f.append(dict(
+            id="sms-likely-scam", severity="high",
+            title="This looks like a scam text, not list marketing",
+            detail=f"Classified scam ({why}). Do not tap the link and do not reply, "
+                   "not even STOP: a reply confirms the number is live. Forward the "
+                   "text to 7726 (SPAM), which reports it to your carrier, then "
+                   "delete it. Report it to the FTC as fraud. If it names a toll "
+                   "agency, bank or carrier, contact them through their own site or "
+                   "app, never the link in the text. Unsubscribe rules do not apply "
+                   "to a fraudster; the report is the whole remedy.",
+            rule=RULE_SCAM,
+        ))
+    risky = [l for l in links if l["risk"]]
+    for l in risky:
+        f.append(dict(
+            id="sms-risky-link", severity="high" if kind == "scam" else "medium",
+            title=f"Risky link: {l['host']}",
+            detail=f"{l['link']}: " + "; ".join(l["risk"]) + ". Not requested: "
+                   "spamcheck never opens a link from a text message.",
+            rule="observation, not a legal finding",
+        ))
+    if skind == "email":
+        f.append(dict(
+            id="sms-email-sender", severity="medium",
+            title="Sent from an email address, not a phone number",
+            detail=swhy.capitalize() + ". Legitimate businesses text from "
+                   "registered short codes, toll-free or 10-digit numbers.",
+            rule="observation, not a legal finding",
+        ))
+    if kind == "scam":
+        return f, kind, why, skind, links
+
+    if not OPTOUT_INSTR_RE.search(text):
+        f.append(dict(
+            id="sms-no-optout-instruction", severity="low",
+            title="No opt-out instruction such as 'Reply STOP'",
+            detail="Carrier rules expect marketing texts to say how to opt out. "
+                   "Its absence is not by itself a statutory violation, but "
+                   "replying STOP still works: any reasonable way of saying no "
+                   "revokes consent, and the words stop, quit, end, revoke, opt "
+                   "out, cancel and unsubscribe all count.",
+            rule=RULE_REVOKE + "; " + RULE_CTIA,
+        ))
+    if not BRAND_PREFIX_RE.search(text) and kind in ("commercial", "unclear"):
+        f.append(dict(
+            id="sms-no-brand", severity="info",
+            title="The text does not say who sent it",
+            detail="Carrier guidelines expect a program to identify itself. "
+                   "Without a name there is nobody to complain about; note the "
+                   "number and keep the text.",
+            rule=RULE_CTIA,
+        ))
+
+    if received and kind == "commercial":
+        if received.hour < 8 or received.hour >= 21:
+            f.append(dict(
+                id="sms-quiet-hours", severity="medium",
+                title=f"Marketing text received at {received:%H:%M}, outside 8 a.m. "
+                      "to 9 p.m.",
+                detail="Telephone solicitations are barred before 8 a.m. or after "
+                       "9 p.m. local time at the recipient's location. This uses "
+                       "the time you gave as your local time. It reaches "
+                       "solicitations only, not political or nonprofit texts.",
+                rule=RULE_QUIET,
+            ))
+
+    rec = sms_ledger_match(sender)
+    if rec and received:
+        clicked = date.fromisoformat(rec["clicked"])
+        got = received.date()
+        if got > clicked:
+            n = business_days_between(clicked, got)
+            f.append(dict(
+                id="sms-past-honor-window" if n > 10 else "sms-within-honor-window",
+                severity="high" if n > 10 else "info",
+                title=(f"Texted {n} business days after you replied STOP" if n > 10
+                       else f"{n} business day(s) since your STOP, still inside 10"),
+                detail=(f"You recorded STOP to {rec['domain']} on {clicked}. This "
+                        f"text arrived {got}, {n} business days later. Weekends and "
+                        "federal holidays are excluded. A revocation has to be "
+                        "honored within 10 business days."
+                        if n > 10 else
+                        f"STOP recorded {clicked}; this arrived {got}. One "
+                        "confirmation text right after STOP is allowed; keep every "
+                        "text after day 10.")
+                       + (f" Note: {rec['note']}" if rec.get("note") else ""),
+                rule=RULE_REVOKE,
+            ))
+    elif sender and skind != "email":
+        f.append(dict(
+            id="sms-no-stop-recorded", severity="info",
+            title="No STOP reply on record for this sender",
+            detail="Reply STOP, then record it: spamcheck.py --opt-out "
+                   f"{sender} --note 'replied STOP'. The date starts the 10 "
+                   "business day clock.",
+            rule=RULE_REVOKE,
+        ))
+
+    if kind == "political":
+        f.append(dict(
+            id="sms-political", severity="info",
+            title="Political text: the TCPA still applies, the Do Not Call list "
+                  "does not",
+            detail=POLITICAL_SMS_NOTE,
+            rule=RULE_POLITICAL,
+        ))
+    if kind == "commercial":
+        f.append(dict(
+            id="sms-private-right", severity="info",
+            title="Unlike email, you may be able to sue over texts",
+            detail=PRIVATE_RIGHT_NOTE,
+            rule=RULE_PRIVATE,
+        ))
+    f.append(dict(
+        id="sms-report", severity="info",
+        title="Where to report it",
+        detail="Forward the text to 7726 (SPAM) so your carrier can block the "
+               "sender. File with the FCC for unwanted texts, and with the FTC's "
+               "Do Not Call site if you are on the registry and it was a sales text.",
+        rule=RULE_REPORT,
+    ))
+
+    order = {"high": 0, "medium": 1, "low": 2, "info": 3}
+    f.sort(key=lambda x: order.get(x["severity"], 9))
+    return f, kind, why, skind, links
+
+
+# Citations live here, one place, so the references file and the report agree.
+RULE_SCAM = ("FTC consumer alert on toll text scams (Jan 2025); FTC, How to recognize "
+             "and report spam text messages; see references/texts.md")
+RULE_REVOKE = ("47 CFR 64.1200(a)(10), (a)(12); under FCC review for 2026-09-30, "
+               "see references/texts.md")
+RULE_CTIA = "CTIA Messaging Principles and Best Practices (carrier guideline, not law)"
+RULE_QUIET = "47 CFR 64.1200(c)(1), (e)"
+RULE_POLITICAL = "47 U.S.C. 227(a)(4), 227(b)(1)(A)(iii); FCC DA 20-670"
+RULE_PRIVATE = "47 U.S.C. 227(b)(3), 227(c)(5)"
+RULE_REPORT = ("7726 and reportfraud.ftc.gov per the FTC; donotcall.gov/report.html; "
+               "consumercomplaints.fcc.gov")
+POLITICAL_SMS_NOTE = (
+    "Political texts are not telephone solicitations, so the Do Not Call "
+    "registry and the quiet-hours rule do not reach them. The autodialer rule "
+    "still does, whatever the message says. Many campaign texts are sent one by "
+    "one by volunteers through peer-to-peer platforms, which the FCC has said "
+    "fall outside the autodialer rule. Replying STOP is still the fastest fix; "
+    "the platform removes the number.")
+PRIVATE_RIGHT_NOTE = (
+    "The TCPA lets a recipient sue: $500 per violation, up to three times that "
+    "if willful. Two routes: texts sent with an autodialer without consent, and "
+    "more than one solicitation in 12 months to a number on the Do Not Call "
+    "registry. One inbox cannot show whether an autodialer was used, and the "
+    "Supreme Court narrowed that term in 2021. Keep every text, the dates, and "
+    "your registry confirmation.")
+
+
+def render_sms(report):
+    L = []
+    a = L.append
+    a("# spamcheck report (text message)")
+    a("")
+    a(f"- Generated: {report['generated_utc']}")
+    a(f"- Sender: `{report['sender'] or 'not given'}` ({report['sender_kind']})")
+    a(f"- Received: {report['received'] or 'not given'}")
+    a(f"- Classified: **{report['kind']}** ({report['why']})")
+    a("")
+    a("## Findings")
+    a("")
+    for i, f in enumerate(report["findings"], 1):
+        a(f"{i}. **[{f['severity']}] {f['title']}**")
+        a(f"   - {f['detail']}")
+        a(f"   - Rule: {f['rule']}")
+    a("")
+    a("## Links in the text")
+    a("")
+    if not report["links"]:
+        a("None.")
+    for l in report["links"]:
+        a(f"- `{l['link'][:120]}`: " + ("; ".join(l["risk"]) or "no obvious risk sign")
+          + ". Not opened.")
+    a("")
+    a("## The text")
+    a("")
+    a("```")
+    a(report["text"].strip())
+    a("```")
+    a("")
+    return "\n".join(L)
+
+
 # ---------------------------------------------------------------- reporting
 
 def render(report):
@@ -574,6 +880,15 @@ def main():
                      help="read the raw message from stdin")
     src.add_argument("--url", action="append", default=[],
                      help="probe a bare unsubscribe URL; repeatable")
+    src.add_argument("--sms", action="store_true",
+                     help="read a TEXT MESSAGE from stdin instead of an email. Links "
+                          "in it are never opened, with or without --probe")
+    src.add_argument("--sms-file", metavar="FILE", help="read a text message from FILE")
+    ap.add_argument("--sender", help="with --sms: the number, short code or address "
+                                     "it came from")
+    ap.add_argument("--received", metavar="'YYYY-MM-DD HH:MM'",
+                    help="with --sms: when it arrived, your local time. Enables the "
+                         "quiet-hours and STOP-window checks")
     ap.add_argument("--probe", action="store_true",
                     help="request the List-Unsubscribe HEADER urls only. Safe: RFC "
                          "8058 one-click requires POST, so a GET cannot opt you out")
@@ -582,10 +897,11 @@ def main():
                          "safe: most footer links act on GET, so this can actually "
                          "unsubscribe you and can confirm your address is live to a "
                          "spammer. Off by default on purpose")
-    ap.add_argument("--opt-out", metavar="DOMAIN",
-                    help="record that you clicked unsubscribe for this sender "
-                         "domain today, then exit. This date is what makes the 10 "
-                         "business day rule usable")
+    ap.add_argument("--opt-out", metavar="DOMAIN_OR_NUMBER",
+                    help="record that you clicked unsubscribe (email: the sender "
+                         "domain) or replied STOP (text: the number or short code) "
+                         "today, then exit. This date is what makes the 10 business "
+                         "day rule usable")
     ap.add_argument("--date", metavar="YYYY-MM-DD",
                     help="with --opt-out, the date you actually clicked")
     ap.add_argument("--note", help="with --opt-out, where or how you clicked")
@@ -619,6 +935,43 @@ def main():
         print(f"appended to {LEDGER}")
         return 0
 
+    if args.sms or args.sms_file:
+        if args.sms_file:
+            with open(args.sms_file, encoding="utf-8") as fh:
+                text = fh.read()
+        else:
+            text = sys.stdin.read()
+        if not text.strip():
+            print("nothing to check: paste the text on stdin or use --sms-file",
+                  file=sys.stderr)
+            return 2
+        received = None
+        if args.received:
+            try:
+                received = datetime.strptime(args.received.strip(), "%Y-%m-%d %H:%M")
+            except ValueError:
+                print("--received wants 'YYYY-MM-DD HH:MM'", file=sys.stderr)
+                return 2
+        findings, kind, why, skind, links = audit_sms(text, args.sender, received)
+        report = dict(
+            generated_utc=datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+            channel="sms", sender=args.sender or "", sender_kind=skind,
+            received=args.received or "", kind=kind, why=why,
+            findings=findings, links=links, text=text)
+        if args.json:
+            print(json.dumps(report, indent=2))
+        else:
+            md = render_sms(report)
+            path = args.out or default_report_path()
+            try:
+                with open(path, "w", encoding="utf-8") as fh:
+                    fh.write(md + "\n")
+                print(md)
+                print(f"\nwrote {path}")
+            except OSError:
+                print(md)
+        return 1 if any(f["severity"] in ("high", "medium") for f in findings) else 0
+
     if args.url and not (args.eml or args.paste):
         probed = [probe(u) for u in args.url]
         report = dict(generated_utc=datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
@@ -637,7 +990,7 @@ def main():
                       probed=probed)
     else:
         if not (args.eml or args.paste):
-            ap.error("give --eml FILE, --paste, or --url URL")
+            ap.error("give --eml FILE, --paste, --url URL, or --sms")
         msg = load_message(args)
         text = body_text(msg)
         hdr = header_unsub(msg)

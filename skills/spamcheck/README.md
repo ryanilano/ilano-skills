@@ -85,6 +85,31 @@ tool assembles the evidence and names who can act. Whether to file is yours.
 Every legal citation is quoted from the primary source in `references/complaints.md`,
 with the date it was read.
 
+## Text messages too
+
+Paste a text instead of an email and it runs a different set of checks, because texts
+run under a different law. The TCPA and the FCC's rules cover texts, not CAN-SPAM, and
+unlike email a person can sue: $500 a text, up to three times that if the sender knew.
+
+First it asks whether the text is a scam: an unpaid toll, a package that could not be
+delivered, a locked bank account. If so, the advice is short. Do not tap the link, do
+not reply (not even STOP, because a reply tells them the number is real), forward it to
+7726 so your carrier can block it, report it to the FTC, and delete it.
+
+If it is ordinary marketing, it checks what matters for texts: whether it says who sent
+it and how to stop it, whether a sales text arrived before 8 a.m. or after 9 p.m., and,
+once you record the day you replied STOP, whether they kept texting past the ten
+business days the FCC allows. Political texts get the honest answer: the Do Not Call
+list and quiet hours do not cover them, and replying STOP is the real fix.
+
+It never opens a link from a text. Every citation is quoted from its primary source in
+`references/texts.md`.
+
+```bash
+pbpaste | python3 scripts/spamcheck.py --sms --sender 22395 --received "2026-09-23 21:40"
+python3 scripts/spamcheck.py --opt-out 22395 --note "replied STOP"
+```
+
 ## Run it
 
 ```bash
