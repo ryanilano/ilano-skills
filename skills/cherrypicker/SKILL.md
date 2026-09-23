@@ -63,7 +63,7 @@ Labels land on the picker buttons beside Both, Rewrite and Cut, so make them sho
 python3 scripts/verify.py merge.html
 ```
 
-Picks a row, reloads, and checks the pick survived with no page errors. Done when it exits 0 **and** you have looked at the screenshot it writes: a page that passes but reads badly still fails.
+Picks a row and types a note, reloads, and checks both were hot-saved, with no page errors. Done when it exits 0 **and** you have looked at the screenshot it writes: a page that passes but reads badly still fails.
 
 ### 6. Deliver
 

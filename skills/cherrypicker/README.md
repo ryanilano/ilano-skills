@@ -20,8 +20,10 @@ Export gives you markdown: every decision grouped by choice, with your notes, th
 ## Things it does for you
 
 - **Rows that exist in only one draft are shown on purpose.** That is the copy a quick merge silently loses.
-- **Your picks live in the page's address**, so bookmarking it on a phone or tablet reopens exactly where you left off. Notes save to a small file beside the page.
+- **It saves as you go.** Your picks and notes live in the page's address, so bookmarking it on a phone or tablet reopens exactly where you left off. The browser keeps a copy too, and you can also save your notes to a file.
 - **It works on a tablet.** The layout goes to one column on narrow screens, and a helper script can serve the page to your own devices over Tailscale.
+- **Light or dark.** It follows your device's setting, and a Theme button lets you pin either one.
+- **It works with a screen reader and keyboard.** Every row, draft and choice is labelled, the buttons report whether they are selected, and a skip link jumps past the header.
 
 ## Who does what
 

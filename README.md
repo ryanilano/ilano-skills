@@ -53,7 +53,7 @@ You clicked unsubscribe and the mail kept coming. This reads one saved email and
 
 ### [cherrypicker](skills/cherrypicker)
 
-Two drafts of the same piece, one decision per section. Lays both side by side, aligned by what each passage does rather than by line, with A, B, Both (four ways to combine), Rewrite or Cut on every row, and exports the decisions plus a worklist of what still needs writing. Picks save into the page's URL, so it resumes on a tablet. Plain-language walkthrough in [the skill README](skills/cherrypicker/README.md).
+Two drafts of the same piece, one decision per section. Lays both side by side, aligned by what each passage does rather than by line, with A, B, Both (four ways to combine), Rewrite or Cut on every row, and exports the decisions plus a worklist of what still needs writing. Picks and notes hot-save into the page's URL as you go, so it resumes on a tablet. Plain-language walkthrough in [the skill README](skills/cherrypicker/README.md).
 
 ## Vendored skills
 

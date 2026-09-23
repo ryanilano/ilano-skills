@@ -541,8 +541,18 @@ BOARD_CSS = """
 }
 * { box-sizing:border-box; }
 body { background:var(--paper); color:var(--ink); margin:0;
-  font:16px/1.5 -apple-system,system-ui,"Helvetica Neue",sans-serif; }
+  font:1rem/1.5 -apple-system,system-ui,"Helvetica Neue",sans-serif; }
 a { color:inherit; }
+:focus-visible { outline:3px solid var(--link); outline-offset:2px; }
+.masthead :focus-visible { outline-color:#0b0b0b; }
+.vh { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0);
+  white-space:nowrap; }
+.skip { position:absolute; left:-9999px; top:0; background:var(--ink); color:var(--paper);
+  padding:.6rem 1rem; z-index:20; }
+.skip:focus { left:1rem; top:1rem; }
+@media (prefers-reduced-motion:reduce) {
+  *,*::before,*::after { transition:none!important; scroll-behavior:auto!important; }
+}
 .masthead { background:var(--yellow); }
 .mast-inner { max-width:78rem; margin:0 auto; padding:.6rem 1.25rem;
   display:flex; align-items:center; gap:1.5rem; }
@@ -556,7 +566,7 @@ a { color:inherit; }
 .mastnav a:first-child { border-left:0; }
 .mastnav a:hover { text-decoration:underline; }
 .tbtn { background:transparent; border:1px solid rgba(0,0,0,.5); color:#0b0b0b;
-  border-radius:99px; width:2rem; height:2rem; cursor:pointer; font-size:.9rem; flex:none; }
+  border-radius:99px; min-width:2.75rem; min-height:2.75rem; cursor:pointer; font-size:.9rem; flex:none; }
 .strip { max-width:78rem; margin:0 auto; padding:1rem 1.25rem .9rem;
   font:.78rem/1.5 ui-monospace,SFMono-Regular,Menlo,monospace; color:var(--dim);
   letter-spacing:.02em; }
@@ -610,12 +620,12 @@ a { color:inherit; }
 .railitem h3 a:hover { text-decoration:underline; }
 .railthumb img { width:5.5rem; height:3.2rem; object-fit:cover; display:block; background:#000; }
 .railthumb.noimg img { display:none; }
-.ruler { border-top:2px dotted var(--rule); margin:2.75rem 0 1.5rem; }
+.ruler { border:0; border-top:2px dotted var(--rule); margin:2.75rem 0 1.5rem; }
 .allhead { display:flex; align-items:center; gap:1rem; margin-bottom:1.25rem; flex-wrap:wrap; }
 .allhead .boxhead { margin:0; }
 #filter { flex:1; min-width:12rem; max-width:22rem; background:var(--chip); color:var(--ink);
   border:1px solid var(--rule); padding:.45rem .65rem; font-size:.85rem; border-radius:2px; }
-#filter:focus { outline:2px solid var(--yellow); outline-offset:0; }
+#filter:focus-visible { outline:3px solid var(--link); outline-offset:2px; }
 .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(16rem,1fr));
   gap:2rem 1.5rem; align-items:start; }
 .card { background:var(--card); min-width:0; }
@@ -699,7 +709,9 @@ def page(msg=""):
         if c.get("has_video"):
             return (f"<video class='{cls}' controls preload='none' poster='/thumb/{cid}.jpg' "
                     f"src='/video/{cid}.mp4'></video>")
-        return (f"<a class='posterlink' href='/read/{cid}'>"
+        # The poster repeats the title link beside it, so it is hidden from
+        # assistive tech and the tab order rather than announced twice.
+        return (f"<a class='posterlink' href='/read/{cid}' aria-hidden='true' tabindex='-1'>"
                 f"<img class='{cls}' src='/thumb/{cid}.jpg' alt='' loading='lazy' "
                 f"onerror=\"this.closest('.posterlink').classList.add('noimg')\">"
                 f"<span class='dur'>{e(c.get('duration_string', ''))}</span></a>")
@@ -721,7 +733,7 @@ def page(msg=""):
   <p class="kicker">{e(hero.get('channel', ''))}</p>
   <h2 class="hero-h"><a href="/read/{e(hero['id'])}">{e(hero['title'])}</a></h2>
   <p class="hero-sub">{e(hero.get('duration_string', ''))} · {e(hero.get('sub_source', ''))} · {e(meta_line(hero))}</p>
-  <p class="hero-by">Transcript · <a href="{e(hero['url'])}" target="_blank" rel="noopener">watch the original</a></p>
+  <p class="hero-by">Transcript · <a href="{e(hero['url'])}" target="_blank" rel="noopener">watch the original<span class="vh"> (opens in a new tab)</span></a></p>
 </section>""" if hero else "<section class='hero'><p class='dim'>nothing grabbed yet</p></section>"
 
     start_here = "".join(f"""
@@ -736,7 +748,7 @@ def page(msg=""):
       <p class="label">{e(c.get('channel', ''))}</p>
       <h3><a href="/read/{e(c['id'])}">{e(c['title'])}</a></h3>
     </div>
-    <a class="railthumb posterlink" href="/read/{e(c['id'])}">
+    <a class="railthumb posterlink" href="/read/{e(c['id'])}" aria-hidden="true" tabindex="-1">
       <img src="/thumb/{e(c['id'])}.jpg" alt="" loading="lazy"
            onerror="this.closest('.posterlink').classList.add('noimg')"></a>
   </article>""" for c in rail)
@@ -753,7 +765,7 @@ def page(msg=""):
       <button class="btn" onclick="copyT('{e(c['id'])}','md',this)">copy</button>
       <a class="btn" href="/t/{e(c['id'])}.md">raw</a>
       {("<a class='btn' href='/video/" + e(c['id']) + ".mp4' download>video</a>") if c.get('has_video') else ""}
-      <a class="btn src" href="{e(c['url'])}" target="_blank" rel="noopener">source ↗</a>
+      <a class="btn src" href="{e(c['url'])}" target="_blank" rel="noopener">source <span aria-hidden="true">↗</span><span class="vh"> (opens in a new tab)</span></a>
     </div>
   </div>
 </article>""" for c in rest)
@@ -761,38 +773,44 @@ def page(msg=""):
     return f"""<!doctype html><html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>yt-cc</title><style>{BOARD_CSS}</style></head><body>
-<header class="masthead">
-  <div class="mast-inner">
-    <a class="wordmark" href="/">yt<span>·</span>cc</a>
-    <nav class="mastnav">{chan_nav}<a href="#all">Archive</a></nav>
-    <button class="tbtn" id="theme" title="light / dark">◐</button>
-  </div>
+<a class="skip" href="#main">Skip to content</a>
+<header>
+  <div class="masthead"><div class="mast-inner">
+    <a class="wordmark" href="/" aria-label="yt-cc, front page">yt<span aria-hidden="true">·</span>cc</a>
+    <nav class="mastnav" aria-label="Browse">{chan_nav}<a href="#all">Archive</a></nav>
+    <button type="button" class="tbtn" id="theme" aria-label="Switch between light and dark theme"><span aria-hidden="true">◐</span></button>
+  </div></div>
+  <p class="strip"><b>Making sense of it all:</b> {len(cs)} transcripts / {total_minutes()} minutes / captions only, nothing streamed</p>
 </header>
 
-<div class="strip"><b>Making sense of it all:</b> {len(cs)} transcripts / {total_minutes()} minutes / captions only, nothing streamed</div>
-
-<main class="wrap">
+<main class="wrap" id="main">
+  <h1 class="vh">yt-cc transcripts</h1>
   {msg}
   <div class="three">
-    <aside class="starthere">
-      <h2 class="boxhead">Start here</h2>
+    <aside class="starthere" aria-labelledby="start-h">
+      <h2 class="boxhead" id="start-h">Start here</h2>
       <ol class="startlist">{start_here}</ol>
       <form method="post" action="/grab" class="grabform">
-        <input name="url" placeholder="paste a video URL" required>
-        <label class="vid"><input type="checkbox" name="video" value="1"> mp4</label>
-        <button class="grab">Grab</button>
+        <label class="vh" for="grab-url">Video URL to grab</label>
+        <input id="grab-url" name="url" type="url" inputmode="url" placeholder="paste a video URL" required>
+        <label class="vid"><input type="checkbox" name="video" value="1"> also save the mp4</label>
+        <button type="submit" class="grab">Grab</button>
       </form>
     </aside>
     {hero_html}
-    <aside class="rail">{rail_html}</aside>
+    <aside class="rail" aria-labelledby="rail-h"><h2 class="vh" id="rail-h">Recent</h2>{rail_html}</aside>
   </div>
 
-  <div class="ruler"></div>
+  <hr class="ruler">
+  <section aria-labelledby="all">
   <div class="allhead">
     <h2 class="boxhead" id="all">The archive</h2>
-    <input id="filter" placeholder="filter by title or channel" autocomplete="off">
+    <label class="vh" for="filter">Filter the archive by title or channel</label>
+    <input id="filter" type="search" placeholder="filter by title or channel" autocomplete="off">
+    <p class="vh" id="filter-count" role="status" aria-live="polite"></p>
   </div>
   <div class="grid">{grid_html}</div>
+  </section>
 </main>
 
 <script>
@@ -814,11 +832,13 @@ async function copyT(id, kind, b) {{
 const f = document.getElementById('filter');
 f && f.addEventListener('input', () => {{
   const q = f.value.toLowerCase().trim();
+  let shown = 0;
   document.querySelectorAll('.grid .card').forEach(c => {{
     const hit = !q || c.dataset.title.includes(q)
       || (c.dataset.channel || '').toLowerCase().includes(q);
-    c.style.display = hit ? '' : 'none';
+    c.hidden = !hit; if (hit) shown++;
   }});
+  document.getElementById('filter-count').textContent = q ? shown + ' shown' : '';
 }});
 </script></body></html>"""
 
@@ -954,7 +974,8 @@ def md_to_html(src):
             box = re.match(r"^\[([ xX])\]\s+(.*)$", item)
             if box:
                 checked = " checked" if box.group(1).lower() == "x" else ""
-                out.append(f"<li class='task'><input type='checkbox' disabled{checked}> {md_inline(box.group(2))}</li>")
+                state = "Done" if checked else "Not done"
+                out.append(f"<li class='task'><input type='checkbox' disabled{checked} aria-label='{state}'> {md_inline(box.group(2))}</li>")
             else:
                 out.append(f"<li>{md_inline(item)}</li>")
             i += 1
@@ -970,22 +991,34 @@ def md_to_html(src):
 READER_CSS = """
 :root {
   --bg:#fbfaf8; --fg:#16181d; --dim:#5f6672; --rule:#e3e0da; --card:#fff;
-  --accent:#0b0b0b; --yellow:#fff102; --code-bg:#f2efe9; --link:#0b5fa5; --mark:#8a8378;
+  --accent:#0b0b0b; --yellow:#fff102; --code-bg:#f2efe9; --link:#0b5fa5; --mark:#5c574c;
 }
 :root[data-theme="dark"] {
   --bg:#0f1216; --fg:#e6e9ee; --dim:#8d95a3; --rule:#232a34; --card:#151a21;
-  --accent:#ffe814; --yellow:#ffe814; --code-bg:#1a212a; --link:#79b8ff; --mark:#6e7887;
+  --accent:#ffe814; --yellow:#ffe814; --code-bg:#1a212a; --link:#79b8ff; --mark:#a3acb9;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --bg:#0f1216; --fg:#e6e9ee; --dim:#8d95a3; --rule:#232a34; --card:#151a21;
-    --accent:#ffe814; --yellow:#ffe814; --code-bg:#1a212a; --link:#79b8ff; --mark:#6e7887;
+    --accent:#ffe814; --yellow:#ffe814; --code-bg:#1a212a; --link:#79b8ff; --mark:#a3acb9;
   }
 }
 * { box-sizing:border-box; }
 body { background:var(--bg); color:var(--fg); margin:0;
-  font:19px/1.65 Charter,"Iowan Old Style","Source Serif Pro",Georgia,"Times New Roman",serif;
+  font:1.1875rem/1.65 Charter,"Iowan Old Style","Source Serif Pro",Georgia,"Times New Roman",serif;
   -webkit-font-smoothing:antialiased; }
+:focus-visible { outline:3px solid var(--link); outline-offset:2px; }
+.vh { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0);
+  white-space:nowrap; }
+.skip { position:absolute; left:-9999px; top:0; background:var(--fg); color:var(--bg);
+  padding:.6rem 1rem; z-index:20; font-family:-apple-system,system-ui,sans-serif; font-size:.9rem; }
+.skip:focus { left:1rem; top:1rem; }
+.caution { font-family:-apple-system,system-ui,sans-serif; font-size:.8rem; color:var(--fg);
+  border-left:4px solid var(--yellow); padding:.35rem .7rem; margin:1rem 0 0; }
+html { scroll-padding-top:4rem; }
+@media (prefers-reduced-motion:reduce) {
+  *,*::before,*::after { transition:none!important; scroll-behavior:auto!important; }
+}
 .topbar { position:sticky; top:0; z-index:9; background:color-mix(in srgb, var(--bg) 92%, transparent);
   backdrop-filter:saturate(1.4) blur(8px); border-bottom:1px solid var(--rule); }
 .topbar .inner { max-width:46rem; margin:0 auto; padding:.7rem 1.25rem;
@@ -995,7 +1028,7 @@ body { background:var(--bg); color:var(--fg); margin:0;
 .topbar a:hover { color:var(--fg); }
 .spacer { flex:1; }
 .tbtn { background:transparent; border:1px solid var(--rule); color:var(--dim);
-  border-radius:99px; padding:.25rem .7rem; font:inherit; cursor:pointer; }
+  border-radius:99px; padding:.25rem .7rem; font:inherit; cursor:pointer; min-height:2.75rem; min-width:2.75rem; }
 .tbtn:hover { color:var(--fg); border-color:var(--mark); }
 .progress { position:fixed; top:0; left:0; height:3px; background:var(--yellow); width:0; z-index:10; }
 article { max-width:46rem; margin:0 auto; padding:2.5rem 1.25rem 6rem; }
@@ -1007,11 +1040,12 @@ h1 { font-size:2.4rem; line-height:1.12; letter-spacing:-.02em; margin:0 0 .75re
 .byline { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:.75rem; color:var(--dim);
   border-bottom:2px dotted var(--rule); padding-bottom:1.1rem; margin-bottom:2rem;
   letter-spacing:.02em; }
-.byline a { color:var(--link); text-decoration:none; }
-.stats { display:flex; gap:1.5rem; flex-wrap:wrap; margin-top:.7rem; }
-.stat b { display:block; font-family:-apple-system,system-ui,sans-serif; font-size:1.05rem;
+.byline a { color:var(--link); text-decoration:underline; text-underline-offset:.15em; }
+.stats { display:flex; gap:1.5rem; flex-wrap:wrap; margin:.7rem 0 0; }
+.stat { display:flex; flex-direction:column-reverse; }
+.stat dd { margin:0; font-family:-apple-system,system-ui,sans-serif; font-size:1.05rem;
   color:var(--fg); font-weight:650; font-variant-numeric:tabular-nums; }
-.stat span { font-size:.62rem; letter-spacing:.12em; text-transform:uppercase; color:var(--dim);
+.stat dt { font-size:.62rem; letter-spacing:.12em; text-transform:uppercase; color:var(--dim);
   font-family:ui-monospace,monospace; }
 article p { margin:0 0 1.25rem; }
 article p:first-of-type::first-letter { float:left; font-size:3.6rem; line-height:.8;
@@ -1042,7 +1076,7 @@ th,td { border:1px solid var(--rule); padding:.5rem .65rem; text-align:left; }
 th { background:var(--code-bg); font-weight:650; }
 tbody tr:nth-child(even) { background:color-mix(in srgb, var(--code-bg) 45%, transparent); }
 @media (max-width:34rem) {
-  body { font-size:17.5px; }
+  body { font-size:1.09375rem; }
   h1 { font-size:1.85rem; }
   article { padding:1.75rem 1.1rem 4rem; }
 }
@@ -1082,7 +1116,7 @@ def reader(vid):
     up = str(meta.get("upload_date") or "")
     when = f"{up[0:4]}-{up[4:6]}-{up[6:8]}" if len(up) == 8 and up.isdigit() else "–"
     src = meta.get("sub_source", "")
-    caution = ("<p class='kicker' style='color:var(--mark);margin-top:1rem'>"
+    caution = ("<p class='caution'>"
                "Machine transcription · verify names and numbers before quoting</p>"
                if "auto" in src else "")
 
@@ -1090,31 +1124,34 @@ def reader(vid):
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>{e(title)}</title>
 <style>{READER_CSS}</style></head><body>
-<div class="progress" id="prog"></div>
-<nav class="topbar"><div class="inner">
-  <a href="/">← all transcripts</a>
+<a class="skip" href="#main">Skip to transcript</a>
+<div class="progress" id="prog" aria-hidden="true"></div>
+<header><nav class="topbar" aria-label="Transcript"><div class="inner">
+  <a href="/"><span aria-hidden="true">← </span>all transcripts</a>
   <span class="spacer"></span>
-  <a href="/t/{e(vid)}.md">raw</a>
-  <a href="{e(meta.get('url', '#'))}" target="_blank" rel="noopener">source ↗</a>
-  <button class="tbtn" id="theme" title="light / dark">◐</button>
-</div></nav>
+  <a href="/t/{e(vid)}.md">raw markdown</a>
+  <a href="{e(meta.get('url', '#'))}" target="_blank" rel="noopener">source <span aria-hidden="true">↗</span><span class="vh"> (opens in a new tab)</span></a>
+  <button type="button" class="tbtn" id="theme" aria-label="Switch between light and dark theme"><span aria-hidden="true">◐</span></button>
+</div></nav></header>
+<main id="main">
 <article>
   <p class="kicker">{e(meta.get('channel', 'transcript'))}</p>
   <h1>{e(title)}</h1>
   <div class="byline">
-    Transcript of <a href="{e(meta.get('url', '#'))}" target="_blank" rel="noopener">this video</a>
+    Transcript of <a href="{e(meta.get('url', '#'))}" target="_blank" rel="noopener">this video<span class="vh"> (opens in a new tab)</span></a>
     · {e(src or 'captions')}
-    <div class="stats">
-      <div class="stat"><b>{e(meta.get('duration_string', '–'))}</b><span>runtime</span></div>
-      <div class="stat"><b>{words:,}</b><span>words</span></div>
-      <div class="stat"><b>{max(1, words // 238)}</b><span>min read</span></div>
-      <div class="stat"><b>{e(views)}</b><span>views</span></div>
-      <div class="stat"><b>{e(when)}</b><span>published</span></div>
-    </div>
+    <dl class="stats">
+      <div class="stat"><dt>runtime</dt><dd>{e(meta.get('duration_string', '–'))}</dd></div>
+      <div class="stat"><dt>words</dt><dd>{words:,}</dd></div>
+      <div class="stat"><dt>min read</dt><dd>{max(1, words // 238)}</dd></div>
+      <div class="stat"><dt>views</dt><dd>{e(views)}</dd></div>
+      <div class="stat"><dt>published</dt><dd>{e(when)}</dd></div>
+    </dl>
     {caution}
   </div>
   {md_to_html(raw)}
 </article>
+</main>
 <script>
 const root = document.documentElement, btn = document.getElementById('theme');
 const saved = localStorage.getItem('ytcc-theme');
@@ -1195,16 +1232,16 @@ def browse_page(kind, key=None):
         cid = e(c["id"])
         return f"""
 <article class="card">
-  <a class="posterlink" href="/read/{cid}">
+  <a class="posterlink" href="/read/{cid}" aria-hidden="true" tabindex="-1">
     <img class="poster" src="/thumb/{cid}.jpg" alt="" loading="lazy"
          onerror="this.closest('.posterlink').classList.add('noimg')">
     <span class="dur">{e(c.get('duration_string', ''))}</span></a>
   <div class="body">
     <p class="label">{e(c.get('channel', ''))}</p>
-    <h3 class="t"><a href="/read/{cid}">{e(c['title'])}</a></h3>
+    <h2 class="t"><a href="/read/{cid}">{e(c['title'])}</a></h2>
     <div class="row">
       <a class="btn" href="/read/{cid}">read</a>
-      <a class="btn src" href="{e(c['url'])}" target="_blank" rel="noopener">source ↗</a>
+      <a class="btn src" href="{e(c['url'])}" target="_blank" rel="noopener">source <span aria-hidden="true">↗</span><span class="vh"> (opens in a new tab)</span></a>
     </div>
   </div>
 </article>"""
@@ -1251,17 +1288,20 @@ def browse_page(kind, key=None):
 .pagehead {{ font:700 2.4rem/1.1 Charter,"Iowan Old Style",Georgia,serif;
   letter-spacing:-.025em; margin:.5rem 0 .3rem; }}
 </style></head><body>
-<header class="masthead"><div class="mast-inner">
-  <a class="wordmark" href="/">yt<span>·</span>cc</a>
-  <nav class="mastnav">
+<a class="skip" href="#main">Skip to content</a>
+<header>
+<div class="masthead"><div class="mast-inner">
+  <a class="wordmark" href="/" aria-label="yt-cc, front page">yt<span aria-hidden="true">·</span>cc</a>
+  <nav class="mastnav" aria-label="Browse">
     <a href="/">Front</a><a href="/channel">Channels</a><a href="/topic">Topics</a>
   </nav>
-  <button class="tbtn" id="theme" title="light / dark">◐</button>
-</div></header>
-<div class="strip"><b>{e(head)}</b> / {e(sub)} / <a href="/{other}">browse by {other} instead</a></div>
-<main class="wrap">
+  <button type="button" class="tbtn" id="theme" aria-label="Switch between light and dark theme"><span aria-hidden="true">◐</span></button>
+</div></div>
+<p class="strip"><b>{e(head)}</b> / {e(sub)} / <a href="/{other}">browse by {other} instead</a></p>
+</header>
+<main class="wrap" id="main">
   <h1 class="pagehead">{e(head)}</h1>
-  <div class="pills">{nav}</div>
+  <nav class="pills" aria-label="Largest {kind}s">{nav}</nav>
   {body}
 </main>
 <script>
@@ -1276,6 +1316,14 @@ btn.onclick = () => {{
   localStorage.setItem('ytcc-theme', next);
 }};
 </script></body></html>"""
+
+
+def not_found_page():
+    return f"""<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Not found · yt-cc</title><style>{BOARD_CSS}</style></head><body>
+<main class="wrap" id="main"><h1 class="hero-h">Not found</h1>
+<p><a href="/">Back to all transcripts</a></p></main></body></html>"""
 
 
 class H(BaseHTTPRequestHandler):
@@ -1297,13 +1345,13 @@ class H(BaseHTTPRequestHandler):
             out = browse_page(b.group(1), b.group(2))
             if out:
                 return self._send(out)
-            return self._send("<p>not found</p>", code=404)
+            return self._send(not_found_page(), code=404)
         r = re.match(r"^/read/([\w-]{6,20})$", p)
         if r:
             html_page = reader(r.group(1))
             if html_page:
                 return self._send(html_page)
-            return self._send("<p>not found</p>", code=404)
+            return self._send(not_found_page(), code=404)
         m = re.match(r"^/t/([\w-]{6,20})\.(md|json)$", p)
         if m:
             f = STORE / m.group(1) / f"transcript.{m.group(2)}"
@@ -1358,8 +1406,8 @@ class H(BaseHTTPRequestHandler):
         want_video = bool(q.get("video"))
         r = grab(url, want_video) if url else {"error": "no url"}
         if "error" in r:
-            return self._send(page(f"<div class='msg err'>{html.escape(r['error'])}</div>"))
-        self._send(page(f"<div class='msg'>grabbed: {html.escape(r['title'])} ({r['cue_count']} cues, {html.escape(r['sub_source'])})</div>"))
+            return self._send(page(f"<div class='msg err' role='alert'>{html.escape(r['error'])}</div>"))
+        self._send(page(f"<div class='msg' role='status'>grabbed: {html.escape(r['title'])} ({r['cue_count']} cues, {html.escape(r['sub_source'])})</div>"))
 
     def log_message(self, *a):
         pass
