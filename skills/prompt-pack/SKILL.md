@@ -1,6 +1,6 @@
 ---
 name: prompt-pack
-description: Compress a loose task description into a structured prompt for a different coding agent (Claude Code, Cline, or similar) to run. Use when the user asks to turn a task into a prompt, pack it, or tighten it, and when a request is clearly destined for another agent rather than for you to execute.
+description: Compress a loose task description into a structured prompt for a different coding agent to run. Use when the user asks to turn a task into a prompt, pack it, or tighten it, and when a request is clearly destined for another agent rather than for you to execute.
 ---
 
 # Prompt Pack
@@ -16,7 +16,7 @@ Turn a loose, conversational task description into a compact prompt for a *diffe
 ## Workflow
 
 1. **Extract intent** from the description. Reuse any files, constraints, or stack already given in the conversation — don't make the agent rediscover them.
-2. **Confirm target + mode** if unstated; default to Claude Code execute mode. (See Targets and modes.)
+2. **Confirm target + mode** if unstated; default to an agent that executes, editing files itself. (See Targets and modes.)
 3. **Fill the template** below — imperative voice, no prose paragraphs.
 4. **Flag gaps, never invent.** Don't fabricate file paths, frameworks, versions, or environment details (OS, distro, versions, hardware). If one is missing or a command depends on it, add a `# NEEDS: <thing>` line at the top instead of guessing.
 5. **Return one fenced code block** — copy-pasteable, with nothing after it except a one-line note if a `# NEEDS` flag exists.
@@ -50,10 +50,10 @@ Exact skeleton. Omit a line only if it genuinely has no content; never pad.
 
 ## Targets and modes
 
-Targets agentic tools with full repo access (Claude Code, Cline, and similar) — they read the codebase and edit files themselves. Adjust only for mode:
+Targets agentic coding tools with full repo access — they read the codebase and edit files themselves. Adjust only for mode:
 
-- **Execute** (Claude Code agent, Cline Act — default): template as-is.
-- **Plan** (Claude Code plan, Cline Plan, read-only): append `Output a plan only; do not edit files.`, change Deliverable to `an ordered implementation plan`, and emphasize the Analyze step.
+- **Execute** (the agent edits files — default): template as-is.
+- **Plan** (the agent only reads and proposes): append `Output a plan only; do not edit files.`, change Deliverable to `an ordered implementation plan`, and emphasize the Analyze step.
 
 Unfamiliar target: confirm it has autonomous file access before using this template; if not, ask how they intend to run the prompt.
 
@@ -80,4 +80,4 @@ Make the mobile nav menu keyboard- and screen-reader-accessible.
 - Acceptance: focus trapped while open; Esc closes and restores focus to toggle; toggle exposes aria-expanded; menu announced by screen readers
 ```
 
-For **plan mode**: same pack with `Deliverable: an ordered implementation plan`, an inventory-style Acceptance, and a trailing `Output a plan only; do not edit files.`
+For **Plan**: same pack with `Deliverable: an ordered implementation plan`, an inventory-style Acceptance, and a trailing `Output a plan only; do not edit files.`
