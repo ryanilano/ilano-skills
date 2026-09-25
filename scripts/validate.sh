@@ -80,6 +80,53 @@ for dir in "$ROOT"/skills/*/; do
   esac
 done
 
+# Harness manifests: version and description are copied by hand into each one,
+# so they must match .claude-plugin/plugin.json. Skipped when that file is absent
+# (a skills-only checkout). Each mismatch is printed as one line and counted.
+if [ -f "$ROOT/.claude-plugin/plugin.json" ] && ! command -v python3 > /dev/null; then
+  fail "python3 not on PATH; cannot check harness manifests"
+elif [ -f "$ROOT/.claude-plugin/plugin.json" ]; then
+  echo "checking harness manifests for version and description drift..." >&2
+  while IFS= read -r msg; do
+    [ -n "$msg" ] && fail "$msg"
+  done < <(python3 - "$ROOT" <<'PY'
+import json, os, sys
+
+root = sys.argv[1]
+# (label, file, path to the plugin object inside it)
+manifests = [
+    (".claude-plugin/plugin.json", ".claude-plugin/plugin.json", []),
+    (".claude-plugin/marketplace.json plugins[0]", ".claude-plugin/marketplace.json", ["plugins", 0]),
+    (".codex-plugin/plugin.json", ".codex-plugin/plugin.json", []),
+    ("kimi.plugin.json", "kimi.plugin.json", []),
+    ("qwen-extension.json", "qwen-extension.json", []),
+    ("gemini-extension.json", "gemini-extension.json", []),
+]
+values = {}
+for label, rel, path in manifests:
+    try:
+        with open(os.path.join(root, rel)) as f:
+            obj = json.load(f)
+        for key in path:
+            obj = obj[key]
+        values[label] = (obj.get("version"), obj.get("description"))
+    except FileNotFoundError:
+        print(f"manifest {rel} is missing")
+    except (ValueError, KeyError, IndexError, TypeError, AttributeError) as e:
+        print(f"manifest {label} could not be read: {e!r}")
+
+ref_label = manifests[0][0]
+if ref_label in values:
+    ref_version, ref_desc = values[ref_label]
+    for label, (version, desc) in values.items():
+        if version != ref_version:
+            print(f"manifest {label} version {version!r} differs from {ref_label} {ref_version!r}")
+        if desc != ref_desc:
+            print(f"manifest {label} description differs from {ref_label}")
+PY
+)
+fi
+
 if [ "$failures" -gt 0 ]; then
   printf '{"ok": false, "skills_checked": %d, "failures": %d}\n' "$checked" "$failures"
   exit 1

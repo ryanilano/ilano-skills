@@ -101,6 +101,40 @@ touch "$FIX/skills/forked/LICENSE.upstream"
 printf 'origin: fork\nmodifications:\n  - changed a thing\n' > "$FIX/skills/forked/PROVENANCE.yaml"
 check_validate "well-formed fork passes" 0 "OK: 1 skill"
 
+# --- validate.sh: harness manifest version and description ----------------------
+
+copy_manifests() { # copy the repo's six harness manifests into the fixture
+  local f
+  for f in .claude-plugin/plugin.json .claude-plugin/marketplace.json .codex-plugin/plugin.json \
+           kimi.plugin.json qwen-extension.json gemini-extension.json; do
+    mkdir -p "$FIX/$(dirname "$f")"
+    cp "$ROOT/$f" "$FIX/$f"
+  done
+}
+
+reset_fixture
+make_skill good-skill original
+copy_manifests
+check_validate "matching harness manifests pass" 0 "OK: 1 skill"
+
+reset_fixture
+make_skill good-skill original
+copy_manifests
+python3 -c 'import json,sys; p=sys.argv[1]; d=json.load(open(p)); d["version"]="9.9.9"; json.dump(d,open(p,"w"))' "$FIX/kimi.plugin.json"
+check_validate "drifted version in one manifest fails" 1 "kimi.plugin.json version '9.9.9' differs"
+
+reset_fixture
+make_skill good-skill original
+copy_manifests
+python3 -c 'import json,sys; p=sys.argv[1]; d=json.load(open(p)); d["plugins"][0]["description"]="other"; json.dump(d,open(p,"w"))' "$FIX/.claude-plugin/marketplace.json"
+check_validate "drifted description in marketplace entry fails" 1 "plugins\[0\] description differs"
+
+reset_fixture
+make_skill good-skill original
+copy_manifests
+rm "$FIX/gemini-extension.json"
+check_validate "missing harness manifest fails" 1 "gemini-extension.json is missing"
+
 # --- vendored branch, against a local file:// upstream --------------------------
 
 setup_upstream() { # creates $UP and $UPSHA with skill content under myskill/

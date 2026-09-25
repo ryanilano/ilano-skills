@@ -17,3 +17,4 @@ modifications:
   - Script path is scripts/fftools.py relative to the skill directory instead of ~/ffmpeg-skill/scripts/fftools.py
   - Description shortened to what it does plus one trigger per branch
   - Upstream ffmpeg.md and README.md not carried; LICENSE carried as LICENSE.upstream
+  - Show step worded tool-neutrally (load the image into context and describe it, or report path and size) so no harness reads it as a call to open or xdg-open

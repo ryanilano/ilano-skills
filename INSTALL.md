@@ -214,6 +214,8 @@ cp -R ilano-skills/skills/<skill-name> <your-skills-dir>/
 
 Copy the whole folder, not only `SKILL.md`: `scripts/`, `references/` and `assets/` are read at run time.
 
+The `humanizer` folder carries its own upstream plugin manifest (`.claude-plugin/plugin.json` and `marketplace.json`), which some harnesses may list as a separate plugin.
+
 ### Verify
 
 Start a new agent session and ask it to list its available skills. The folder name must match the `name` in the skill's frontmatter.
