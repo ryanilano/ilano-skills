@@ -16,7 +16,7 @@ python3 scripts/fftools.py info input.mp4
 1. **Probe first.** `info` on every input: duration, resolution, codecs, size. Output settings come from these numbers, not from guesses.
 2. **Operate.** One helper command per edit; chain edits by feeding one output into the next. Reach for raw `ffmpeg` only when no helper command fits (`references/commands.md`, "Raw ffmpeg").
 3. **Verify.** `info` on the output. Done when the JSON shows the expected duration, resolution and codecs, and no `error` key.
-4. **Show.** Images (thumbnails, frames) go through the Read tool so the user sees them. For video, report the path and size.
+4. **Show.** Load each image (thumbnail, frame) into your context and describe it; if you cannot view images, report its path and size. For video, report the path and size.
 
 ## Rules
 
