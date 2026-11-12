@@ -1,11 +1,11 @@
 ---
 name: tool-call-repair
-description: "Validate-then-repair for malformed LLM tool-call inputs, so a recoverable mistake is fixed at the failing path instead of failing the call. Use when an open or cheaper model (DeepSeek, Qwen, GLM, Kimi, local) keeps bouncing off a strict tool schema: null for an optional field, a stringified array, a bare string for an array, an empty {} placeholder, a markdown-autolinked path."
+description: "Validate-then-repair for malformed LLM tool-call inputs, so a recoverable mistake is fixed at the failing path instead of failing the call. Use when an open or cheaper model (DeepSeek, Qwen, GLM, Kimi, local) keeps failing a strict tool schema: null for an optional field, a stringified array, a bare string for an array, an empty {} placeholder, a markdown-autolinked path."
 ---
 
 # tool-call-repair
 
-Do not fail a tool call on recoverable noise. Validate first; repair only where the schema actually disagreed.
+Repair recoverable noise instead of failing the call. Validate first; repair only where the schema actually disagreed.
 
 ```bash
 python3 scripts/tool_call_repair.py '<schema-json>' '<data-json>'

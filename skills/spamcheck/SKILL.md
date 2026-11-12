@@ -1,6 +1,6 @@
 ---
 name: spamcheck
-description: Audit one email's or text message's opt-out and say what is actually broken, whether it is a scam, and where to report it. Use when a sender's unsubscribe link 404s or does nothing, when asked whether an email breaks CAN-SPAM or a text breaks the TCPA, when texts keep coming after STOP, when a text looks like a toll, package or bank scam, or when a complaint to the FTC, FCC, FEC, a state AG or a sending platform needs the evidence assembled. Reads a saved or pasted message; never touches a mailbox or a phone.
+description: Audit one email's or text message's opt-out and say what is actually broken, whether it is a scam, and where to report it. Use when a sender's unsubscribe link 404s or does nothing, when asked whether an email breaks CAN-SPAM or a text breaks the TCPA, when texts keep coming after STOP, when a text looks like a toll, package or bank scam, or when a complaint to the FTC, FCC, FEC, a state AG or a sending platform needs the evidence assembled. Reads a saved or pasted message.
 ---
 
 # spamcheck

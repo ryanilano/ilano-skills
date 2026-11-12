@@ -2,17 +2,20 @@ origin: vendored
 author: Siqi Chen
 license: MIT
 upstream_repo: https://github.com/blader/humanizer
-upstream_sha: 9862685f575c65a8247f90369951df1b3416e3d6
+upstream_sha: b48c832f0f809c1b5658edbb838c2521b72f2413
 upstream_path: .
-upstream_version: 3.0.0
-upstream_url: https://github.com/blader/humanizer/blob/9862685f575c65a8247f90369951df1b3416e3d6/SKILL.md
-fetched: 2026-09-13T02:36Z
+upstream_version: 4.0.0
+upstream_url: https://github.com/blader/humanizer/blob/b48c832f0f809c1b5658edbb838c2521b72f2413/SKILL.md
+fetched: 2026-11-12T18:45Z
 note: >-
   Byte-identical copy of the upstream repository root at the pinned commit
-  (2026-09-06, "Smooth awkward phrasing in the skill and README"). The skill
+  (2026-11-09, "Merge pull request #333 from blader/release-4.0.0"). The skill
   is Wikipedia's "Signs of AI writing" page turned into an edit loop: mark
   the tells strongest first, draft, check, final. Read in full by Ryan and
-  the agent on 2026-09-13 before vendoring. LICENSE.upstream duplicates the
+  the agent on 2026-09-13 before vendoring; the 3.0.0 to 4.0.0 diff read in
+  full by the agent on 2026-11-12 before updating. 4.0.0 drops the "do not
+  add a fact" rule: step 2 now says to add a specific detail the editor
+  knows to be true where the text is generic. LICENSE.upstream duplicates the
   upstream LICENSE so the credit survives if the copy is ever trimmed.
 related:
   - writing-fragments, writing-beats, writing-shape (Matt Pocock, vendored here) build the article; humanizer edits the result

@@ -1,6 +1,6 @@
 ---
 name: docs-mirror
-description: "Mirror a documentation site or an RSS/Atom feed to local markdown in one command. Use when you need two or more pages from one site, when the user says scrape, mirror, or grab the docs, or when the target is a blog or feed. Not for a single page."
+description: "Mirror a documentation site or an RSS/Atom feed to local markdown in one command. Use when you need two or more pages from one site, when the user asks to mirror or grab docs, or for a blog's archive or feed. A single page is a plain fetch."
 ---
 
 # docs-mirror
@@ -28,8 +28,8 @@ It prints the output directory on the last line. Read `README.md` there first (e
 Prefer a feed to a crawl for any blog: one request for the whole archive. A feed URL is auto-detected when it ends `.xml`, `.rss`, `.atom`, `/feed`, `/rss`, `/atom`, or the body starts as XML with `<rss` or `<feed>`.
 
 ```bash
-docs-mirror https://blog.example.com/index.xml        # feed, auto-detected
-docs-mirror https://blog.example.com --feed           # find the feed for me
+python3 scripts/docs-mirror.py https://blog.example.com/index.xml   # feed, auto-detected
+python3 scripts/docs-mirror.py https://blog.example.com --feed      # find the feed for me
 ```
 
 `--feed` against a bare domain tries, in order: the page's `<link rel="alternate" type="application/rss+xml">` autodiscovery tag, then `/index.xml`, `/feed`, `/feed.xml`, `/rss.xml`, `/atom.xml`.
