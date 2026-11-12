@@ -17,7 +17,7 @@ skills/
 ## SKILL.md format
 
 - YAML frontmatter with `name` (must match the directory name) and `description`.
-- Write and prune every SKILL.md against `skills/writing-for-agents/SKILL.md` (and its `SKILL-MECHANICS.md` for frontmatter and the invocation choice). The description is a context pointer loaded every turn: what the skill does, one trigger per branch, no identity the body already carries.
+- Write and prune every SKILL.md against Matt Pocock's `writing-for-agents` skill (and its `SKILL-MECHANICS.md` for frontmatter and the invocation choice), from the `mattpocock-skills@claude-plugins-official` plugin, source https://github.com/mattpocock/skills/tree/main/skills/productivity/writing-for-agents. This repo no longer vendors a copy. The description is a context pointer loaded every turn: what the skill does, one trigger per branch, no identity the body already carries.
 - A skill only ever fired by a typed slash command gets `disable-model-invocation: true` so its description costs nothing.
 
 ## Context efficiency

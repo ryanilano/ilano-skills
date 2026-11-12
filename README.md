@@ -67,15 +67,14 @@ Byte-identical copies of other people's skills, pinned to a commit. `scripts/val
 
 | Skill | What it does | Source | Author | License | Pinned commit |
 |---|---|---|---|---|---|
-| [humanizer](skills/humanizer) | Edit loop that removes the tells of AI prose, from Wikipedia's "Signs of AI writing" | [blader/humanizer](https://github.com/blader/humanizer) | Siqi Chen | MIT | `9862685` (v3.0.0, 2026-09-06) |
+| [humanizer](skills/humanizer) | Edit loop that removes the tells of AI prose, from Wikipedia's "Signs of AI writing" | [blader/humanizer](https://github.com/blader/humanizer) | Siqi Chen | MIT | `b48c832` (v4.0.0, 2026-11-09) |
 | [writing-fragments](skills/writing-fragments) | Explore: interview the author, append fragments to one file, no structure yet | [mattpocock/skills](https://github.com/mattpocock/skills) | Matt Pocock | MIT | `3cca18b` (2026-09-04) |
 | [writing-beats](skills/writing-beats) | Exploit: grow the article one beat at a time, author picks the next beat | [mattpocock/skills](https://github.com/mattpocock/skills) | Matt Pocock | MIT | `3cca18b` (2026-09-04) |
 | [writing-shape](skills/writing-shape) | Exploit: pick an opening, grow the article block by block, ground every concept first | [mattpocock/skills](https://github.com/mattpocock/skills) | Matt Pocock | MIT | `3cca18b` (2026-09-04) |
-| [writing-for-agents](skills/writing-for-agents) | The reference for any document an agent reads: context pointers, the two loads, information hierarchy, leading words, pruning | [mattpocock/skills](https://github.com/mattpocock/skills) | Matt Pocock | MIT | `74ca5fe` (2026-09-17) |
 
 How the writing skills chain: writing-fragments builds the pile, writing-shape or writing-beats turns the pile into an article, humanizer edits the result. The three Pocock writing skills are user-invoked only (`disable-model-invocation: true` upstream).
 
-writing-for-agents is different in kind: it is the reference the original skills in this repo are written and pruned against, and it fires on its own whenever a skill, `AGENTS.md`, or `CLAUDE.md` is being edited. Every original skill here was audited against it on 2026-09-17.
+writing-for-agents, the reference the original skills here are written and pruned against, is no longer vendored. Install Matt Pocock's plugin for it: `claude plugin install mattpocock-skills@claude-plugins-official` ([mattpocock/skills](https://github.com/mattpocock/skills)). Every original skill here was audited against it on 2026-09-17 and again on 2026-11-12 at upstream `49dd158`.
 
 ## Structure
 

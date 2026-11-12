@@ -1,6 +1,6 @@
 ---
 name: prompt-pack
-description: Compress a loose task description into a structured prompt for a different coding agent to run. Use when the user asks to turn a task into a prompt, pack it, or tighten it, and when a request is clearly destined for another agent rather than for you to execute.
+description: Compress a loose task description into a structured prompt for a different coding agent to run. Use when the user asks to turn a task into a prompt or tighten a prompt, or a request is clearly destined for another agent rather than for you to execute.
 ---
 
 # Prompt Pack
@@ -18,7 +18,7 @@ Turn a loose, conversational task description into a compact prompt for a *diffe
 1. **Extract intent** from the description. Reuse any files, constraints, or stack already given in the conversation — don't make the agent rediscover them.
 2. **Confirm target + mode** if unstated; default to an agent that executes, editing files itself. (See Targets and modes.)
 3. **Fill the template** below — imperative voice, no prose paragraphs.
-4. **Flag gaps, never invent.** Don't fabricate file paths, frameworks, versions, or environment details (OS, distro, versions, hardware). If one is missing or a command depends on it, add a `# NEEDS: <thing>` line at the top instead of guessing.
+4. **Flag gaps.** Every file path, framework, version and environment detail (OS, distro, hardware) in the pack comes from the conversation. When one is missing or a command depends on it, add a `# NEEDS: <thing>` line at the top.
 5. **Return one fenced code block** — copy-pasteable, with nothing after it except a one-line note if a `# NEEDS` flag exists.
 
 ## Output template
@@ -68,7 +68,7 @@ Make the mobile nav menu keyboard- and screen-reader-accessible.
 # Context
 - Read first: src/components/ (locate the nav/hamburger component)
 - Stack: Astro
-- Constraints: WCAG 2.1 AA; don't restyle; preserve hamburger toggle behavior
+- Constraints: WCAG 2.2 AA; don't restyle; preserve hamburger toggle behavior
 
 # Task
 1. Read: the nav component and its open/close logic

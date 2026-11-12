@@ -1,6 +1,6 @@
 ---
 name: deltamaxx
-description: "Maximize the delta (value back minus cost) on rewards programs: credit cards, airline and hotel loyalty, shopping portals, targeted offers. Use when the user names a purchase or merchant, asks which card or program to use, asks whether a card, fee or status is worth it, or says deltamaxx."
+description: "Maximize the delta (value back minus cost) on rewards programs: credit cards, airline and hotel loyalty, shopping portals, targeted offers. Use when the user names a purchase or merchant, asks which card or program to use, or asks whether a card, fee or status is worth it."
 ---
 
 # deltamaxx

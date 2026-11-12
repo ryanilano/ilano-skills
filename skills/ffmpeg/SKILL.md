@@ -1,6 +1,6 @@
 ---
 name: ffmpeg
-description: Edit video, audio and image sequences with ffmpeg through one JSON-returning helper (cut, merge, compress, GIF, subtitles, thumbnails, speed, watermark, stabilize, convert). Use for any media file manipulation, including a video.mp4 that yt-cc saved.
+description: Edit video, audio and image sequences with ffmpeg through one JSON-returning helper (cut, merge, compress, GIF, subtitles, thumbnails, speed, watermark, stabilize, convert). Use for any media file manipulation.
 ---
 
 # ffmpeg

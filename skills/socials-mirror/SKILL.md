@@ -1,11 +1,11 @@
 ---
 name: socials-mirror
-description: "Snapshot a public figure's public profiles (GitHub, Bluesky, any RSS/Atom feed, Reddit .rss, X posts and threads via embeds and Thread Reader) to local markdown in one command. Use when asked what someone has been posting, building, or writing, or when given an X, Twitter, tweet or thread link to read. Twitter means X: any twitter.com or x.com link, tweet, or thread goes through the X flags. Public data only; no login. Not for a private individual."
+description: "Snapshot a public figure's public profiles (GitHub, Bluesky, LinkedIn, any RSS/Atom feed, Reddit .rss, X posts and threads) to local markdown in one command. Use when asked what someone has been posting, building, or writing, when given an X or Twitter link to read, or for a LinkedIn job posting or job search. Public figures only."
 ---
 
 # socials-mirror
 
-Public figures, public data, one friendly snapshot. Not a stalker tool.
+One friendly snapshot of a public figure's public work.
 
 ```bash
 python3 scripts/socials_mirror.py "Ahmad Awais" \
@@ -58,8 +58,9 @@ the network.
    content. A guest page that a site serves to anyone (LinkedIn's logged-out
    profile, X's embed endpoint) counts as public. If a source needs auth, it
    becomes a recorded link, not a scrape.
-2. **Be friendly, not a stalker.** One-shot snapshot of a public figure's public
-   work. No monitoring loop, no aggregating private individuals.
+2. **One shot, public figures.** A single snapshot of a public figure's public
+   work per request, run once on demand rather than on a schedule or loop;
+   private individuals stay out of it.
 3. **RSS is the kindest and cleanest.** One request, full posts. Reddit's own
    `.rss` carries the full post, so the OAuth API is never needed for a profile read.
 4. **Rate-limit and identify.** A `User-Agent` is set and calls are spaced; do
