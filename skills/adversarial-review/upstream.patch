@@ -1,9 +1,9 @@
 Only in local: agents/openai.yaml
 diff --git a/upstream/SKILL.md b/local/SKILL.md
-index e1198b1b8ab559354e1974f182757cb4e96fa43c..c3f6db013ffda17e2d5f874cd413737da80e0aeb 100644
+index e1198b1b8ab559354e1974f182757cb4e96fa43c..371c98270bf27173a20cb26e68518a3fff810f38 100644
 --- a/upstream/SKILL.md
 +++ b/local/SKILL.md
-@@ -1,96 +1,119 @@
+@@ -1,96 +1,120 @@
  ---
  name: adversarial-review
 -description: >-
@@ -43,7 +43,7 @@ index e1198b1b8ab559354e1974f182757cb4e96fa43c..c3f6db013ffda17e2d5f874cd413737d
 +| Target | What the reviewer gets |
 +|---|---|
 +| Local change in git | `git fetch` first; base is the PR base or `origin/<default branch>`. Reviewer gets `git diff $(git merge-base <base> HEAD) -- <paths>`, plus every file from `git ls-files --others --exclude-standard -- <paths>` listed as a file to read |
-+| PR on GitHub, Forgejo or Gitea | In a local clone: `git fetch <remote> <base branch>`, then `git fetch <remote> pull/<n>/head` (the ref works on all three) and record its sha with `git rev-parse FETCH_HEAD`. Record host, PR number, base and head sha. Reviewer gets `git diff <remote>/<base branch>...<head sha>` and reads files with `git show <head sha>:<path>` |
++| PR on GitHub, Forgejo or Gitea | In a local clone: `git fetch <remote> <base branch>` and record the base sha with `git rev-parse FETCH_HEAD`, then `git fetch <remote> pull/<n>/head` (the ref works on all three) and record the head sha the same way. Record host, PR number, base and head sha. Reviewer gets `git diff <base sha>...<head sha>` and reads files with `git show <head sha>:<path>` |
 +| Plan, document, or files outside git | The absolute file paths |
  
 -Determine the **intent** — what the author is trying to achieve. This is critical: reviewers
@@ -113,8 +113,9 @@ index e1198b1b8ab559354e1974f182757cb4e96fa43c..c3f6db013ffda17e2d5f874cd413737d
 -claude -p "prompt" > "$REVIEW_DIR/skeptic.md" 2>/dev/null
 -```
 +The judge is you only if you did not write the target. If you wrote it, or wrote the plan it
-+implements, spawn one judge subagent on the Skeptic's model, with the reviewers' no-edit type and the
-+first paragraph of the reviewer prompt, and give it the target, the intent, the raw reviewer replies
++implements, spawn one judge subagent on the Skeptic's model, with the reviewers' no-edit type and
++the read-only rules from the reviewer prompt's first paragraph (not its reviewer framing: the
++judge decides findings, it does not hunt for new ones), and give it the target, the intent, the raw reviewer replies
 +and the path of [references/verdict-format.md](references/verdict-format.md), not your view. A judge
 +that fails or replies without the format makes the verdict INCOMPLETE.
  
@@ -251,10 +252,10 @@ index 53cc6cf1d72fb5ca7ebcc7dc8e041271ea879dae..91f25cd85704556e05c2017ec229ca30
 +- Is this the simplest path to the outcome, or the one that felt most thorough?
 +- Is there an existing skill, script or tool that already does this?
 diff --git a/upstream/references/reviewer-prompt.md b/local/references/reviewer-prompt.md
-index 75386d18f410c8741eb62508847a386f7649707e..83fc50ff0ddbb7df6f79f657778499644a5b4afc 100644
+index 75386d18f410c8741eb62508847a386f7649707e..38f31d38b914d0b67254ab7aaa3f50cdb0665599 100644
 --- a/upstream/references/reviewer-prompt.md
 +++ b/local/references/reviewer-prompt.md
-@@ -1,14 +1,40 @@
+@@ -1,14 +1,41 @@
 -# Reviewer Prompt Template
 +# Reviewer prompt
  
@@ -297,7 +298,8 @@ index 75386d18f410c8741eb62508847a386f7649707e..83fc50ff0ddbb7df6f79f65777849964
 +Reply with:
 +LENS: <name> (<your model>)
 +VERDICT: APPROVE | CHANGES
-+Findings, highest severity first, ids are lens letter, round, number (S1-1, A1-2, M2-1):
++Findings (write "Findings: none" when there are none), highest severity first, ids are lens
++letter, round, number (S1-1, A1-2, M2-1):
 +<id> [high|medium|low] <file>:<line> <claim>. Failure: <concrete input or state and what goes wrong>. Fix: <smallest change>.
 +HELD: one or two things you attacked that held up, with file:line.
 +```
@@ -307,10 +309,10 @@ index 75386d18f410c8741eb62508847a386f7649707e..83fc50ff0ddbb7df6f79f65777849964
 +Add: "Open findings from earlier rounds: <ledger rows still open>. Check whether the fix closes them and
 +whether it breaks anything new."
 diff --git a/upstream/references/verdict-format.md b/local/references/verdict-format.md
-index 1cfc8f46d98228b4a5cf545caa94d66a97cb55f7..33bb84c967567d3c9df4e2fc54e916049ee0d1eb 100644
+index 1cfc8f46d98228b4a5cf545caa94d66a97cb55f7..b811b95973bc87da86c41d3fcebc2740746271f2 100644
 --- a/upstream/references/verdict-format.md
 +++ b/local/references/verdict-format.md
-@@ -1,30 +1,33 @@
+@@ -1,30 +1,34 @@
 -# Verdict Format
 +# Verdict format
  
@@ -361,5 +363,6 @@ index 1cfc8f46d98228b4a5cf545caa94d66a97cb55f7..33bb84c967567d3c9df4e2fc54e91604
 +- Check the model in each LENS line against the reviewers line.
 +- REJECT: an accepted high finding is open and unfixed. Wins over CONTESTED.
 +- CONTESTED: a high finding the judge marked contested (not confirmed at its line, or reviewers
-+  disagree), or an accepted high logged `fixed, unreviewed`. A contested finding blocks PASS.
-+- PASS: none of the above. The verdict line names every accepted medium still open.
++  disagree), or an accepted high logged `fixed, unreviewed`. A contested high blocks PASS.
++- PASS: none of the above. The verdict line names every accepted medium still open and every
++  contested medium.

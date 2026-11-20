@@ -29,7 +29,8 @@ the user will hit. low = worth noting.
 Reply with:
 LENS: <name> (<your model>)
 VERDICT: APPROVE | CHANGES
-Findings, highest severity first, ids are lens letter, round, number (S1-1, A1-2, M2-1):
+Findings (write "Findings: none" when there are none), highest severity first, ids are lens
+letter, round, number (S1-1, A1-2, M2-1):
 <id> [high|medium|low] <file>:<line> <claim>. Failure: <concrete input or state and what goes wrong>. Fix: <smallest change>.
 HELD: one or two things you attacked that held up, with file:line.
 ```

@@ -17,8 +17,8 @@ Read the PR's remote with `git remote get-url <remote>`. A GitHub remote uses
 `tea pr list --state all` to search), adding `--remote <remote>` when the repo
 has several. In step 6, `<branch>` is the PR's head branch and `<head-remote>`
 is a remote for its head repository (the fork, for a cross-repository PR), both
-read from `gh pr view <n>` or `tea pr <n>`. Without `tea` or a login for that
-host (`tea logins list`), read the PR with plain git:
+read from `gh pr view <n>` or `tea pr <n>`. Without `gh` or `tea`, or a login
+for that host (`gh auth status`, `tea logins list`), read the PR with plain git:
 `git fetch <remote> pull/<n>/head` works on both hosts but names neither, so the
 plain-git path is read-only: report the disposition and stop before step 6.
 

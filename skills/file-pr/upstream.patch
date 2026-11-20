@@ -1,6 +1,6 @@
 Only in local: agents/openai.yaml
 diff --git a/upstream/SKILL.md b/local/SKILL.md
-index c2dea189cec7e24131b7afea412fe445230c107a..736edbf1fb1583be8d4330c55de431ce87de22c0 100644
+index c2dea189cec7e24131b7afea412fe445230c107a..f6e94adc8c8c60748bf89eeffb3935a1bd63dcc0 100644
 --- a/upstream/SKILL.md
 +++ b/local/SKILL.md
 @@ -1,13 +1,19 @@
@@ -27,7 +27,7 @@ index c2dea189cec7e24131b7afea412fe445230c107a..736edbf1fb1583be8d4330c55de431ce
  
  PR titles usually become commit messages, so follow the repository's title
  conventions. Look at recently merged PRs and Git history for examples. Prefer a
-@@ -33,18 +39,29 @@ GOOD
+@@ -33,18 +39,30 @@ GOOD
  
  > ✅ My "new worktree" default was ignored when starting new threads on existing worktrees. Super unintuitive. Now your preferences always apply.
  
@@ -43,20 +43,22 @@ index c2dea189cec7e24131b7afea412fe445230c107a..736edbf1fb1583be8d4330c55de431ce
  
 -Open a real PR rather than a draft so review bots run. If `gh pr create` fails
 -because the GraphQL rate limit is used up, open it through REST with
-+Push the branch before creating the PR: `tea` and the REST fallback below need
-+it on the remote. Pushing stays the user's call. State the exact command,
+-`gh api repos/<owner>/<repo>/pulls -f title=... -f head=... -f base=... -F body=@<file>`. If the user also asked
+-to babysit it, continue with the `babysit-pr` skill.
++Push the branch before creating the PR: every create command below needs it on
++the remote, and if the user declines the push, stop. Pushing stays the user's call. State the exact command,
 +`git push <remote> HEAD:<branch>`, and wait for a yes, unless the user already
 +said to push in this request.
 +
 +Creating the PR on the remote is the action the user asked for. Open a real PR
 +rather than a draft so review bots run. On GitHub, run
-+`gh pr create --head <branch> --base <base> --title <title> --body-file <file>`.
++`gh pr create --head <head> --base <base> --title <title> --body-file <file>`.
 +On Forgejo or Gitea, run
-+`tea pr create --head <branch> --base <base> --title <title> --description-file <file>`.
++`tea pr create --head <head> --base <base> --title <title> --description-file <file>`.
++`<head>` is the branch name, or `<owner>:<branch>` when the branch was pushed to a fork.
 +On GitHub, if `gh pr create` fails because the GraphQL rate limit is used up,
 +open it through REST with
- `gh api repos/<owner>/<repo>/pulls -f title=... -f head=... -f base=... -F body=@<file>`. If the user also asked
--to babysit it, continue with the `babysit-pr` skill.
++`gh api repos/<owner>/<repo>/pulls -f title=... -f head=<head> -f base=... -F body=@<file>`. If the user also asked
 +to watch it through review and CI, use a PR watcher or review skill if one is
 +available.
  

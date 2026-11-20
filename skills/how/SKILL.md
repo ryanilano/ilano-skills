@@ -19,8 +19,8 @@ Every subagent is read-only: its prompt says to read and search, never to edit, 
 | Role | Tier | Claude Code |
 |------|------|-------------|
 | Explorer | fast | `subagent_type: Explore` (or `general-purpose` with the read-only instruction), `model: sonnet` |
-| Explainer (direct or synthesizer) | strong | `subagent_type: general-purpose`, `model: opus` |
-| Critic | strongest available | `subagent_type: general-purpose`, `model: fable` where offered, else `opus` |
+| Explainer (direct or synthesizer) | strong | `subagent_type: Plan` (no Edit or Write), `model: opus` |
+| Critic | strongest available | `subagent_type: Plan` (no Edit or Write), `model: fable` where offered, else `opus` |
 
 On another harness, map each tier to its nearest equivalent.
 
@@ -71,7 +71,7 @@ Then proceed to Step 3.
 
 Spawn a single Task subagent, with the Explainer settings from Subagents, that explores and explains in one pass.
 
-This agent does its own exploration (Glob, Grep, Read) and writes the explanation directly. Read `references/explainer-prompt.md` for the communication style and output format — the agent follows the same structure, it just doesn't have explorer findings as input.
+This agent does its own exploration (Glob, Grep, Read) and writes the explanation directly. Build its prompt from `references/explainer-prompt.md`, read-only line included, for the communication style and output format — the agent follows the same structure, it just doesn't have explorer findings as input, so leave out the template's findings section and its synthesis framing.
 
 Proceed to Step 4.
 

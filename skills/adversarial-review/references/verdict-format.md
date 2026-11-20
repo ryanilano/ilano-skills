@@ -29,5 +29,6 @@ Reviewers: <lens (model): replied | failed: reason>, ... Judge: <self | fable ch
 - Check the model in each LENS line against the reviewers line.
 - REJECT: an accepted high finding is open and unfixed. Wins over CONTESTED.
 - CONTESTED: a high finding the judge marked contested (not confirmed at its line, or reviewers
-  disagree), or an accepted high logged `fixed, unreviewed`. A contested finding blocks PASS.
-- PASS: none of the above. The verdict line names every accepted medium still open.
+  disagree), or an accepted high logged `fixed, unreviewed`. A contested high blocks PASS.
+- PASS: none of the above. The verdict line names every accepted medium still open and every
+  contested medium.

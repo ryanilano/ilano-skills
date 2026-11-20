@@ -45,19 +45,20 @@ session footer.
 Before submission, check the title, description, quotes, and attachments for
 secrets and private details.
 
-Push the branch before creating the PR: `tea` and the REST fallback below need
-it on the remote. Pushing stays the user's call. State the exact command,
+Push the branch before creating the PR: every create command below needs it on
+the remote, and if the user declines the push, stop. Pushing stays the user's call. State the exact command,
 `git push <remote> HEAD:<branch>`, and wait for a yes, unless the user already
 said to push in this request.
 
 Creating the PR on the remote is the action the user asked for. Open a real PR
 rather than a draft so review bots run. On GitHub, run
-`gh pr create --head <branch> --base <base> --title <title> --body-file <file>`.
+`gh pr create --head <head> --base <base> --title <title> --body-file <file>`.
 On Forgejo or Gitea, run
-`tea pr create --head <branch> --base <base> --title <title> --description-file <file>`.
+`tea pr create --head <head> --base <base> --title <title> --description-file <file>`.
+`<head>` is the branch name, or `<owner>:<branch>` when the branch was pushed to a fork.
 On GitHub, if `gh pr create` fails because the GraphQL rate limit is used up,
 open it through REST with
-`gh api repos/<owner>/<repo>/pulls -f title=... -f head=... -f base=... -F body=@<file>`. If the user also asked
+`gh api repos/<owner>/<repo>/pulls -f title=... -f head=<head> -f base=... -F body=@<file>`. If the user also asked
 to watch it through review and CI, use a PR watcher or review skill if one is
 available.
 

@@ -1,5 +1,5 @@
 diff --git a/upstream/SKILL.md b/local/SKILL.md
-index 3ace16d4629f936a83a2ec359ac5dc7b0bf318c0..6c8be86e86ded3acb603ff876c364ffdb0825ef6 100644
+index 3ace16d4629f936a83a2ec359ac5dc7b0bf318c0..7f0b733a11500739624665fff089a2b7f1a03120 100644
 --- a/upstream/SKILL.md
 +++ b/local/SKILL.md
 @@ -1,8 +1,8 @@
@@ -24,8 +24,8 @@ index 3ace16d4629f936a83a2ec359ac5dc7b0bf318c0..6c8be86e86ded3acb603ff876c364ffd
 +`tea pr list --state all` to search), adding `--remote <remote>` when the repo
 +has several. In step 6, `<branch>` is the PR's head branch and `<head-remote>`
 +is a remote for its head repository (the fork, for a cross-repository PR), both
-+read from `gh pr view <n>` or `tea pr <n>`. Without `tea` or a login for that
-+host (`tea logins list`), read the PR with plain git:
++read from `gh pr view <n>` or `tea pr <n>`. Without `gh` or `tea`, or a login
++for that host (`gh auth status`, `tea logins list`), read the PR with plain git:
 +`git fetch <remote> pull/<n>/head` works on both hosts but names neither, so the
 +plain-git path is read-only: report the disposition and stop before step 6.
 +

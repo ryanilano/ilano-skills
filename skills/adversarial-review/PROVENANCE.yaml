@@ -22,6 +22,7 @@ modifications:
   - Size table takes the highest tier any condition reaches and covers files outside git
   - The judge must not be the author; an author-run review spawns a judge subagent that gets the raw replies, not the author's view
   - The judge checks the cited line before accepting or rejecting any high or medium finding
+  - A new agents/openai.yaml in the shape the other skills here use
   - Reviewer prompt bans edits, running the target, git state changes and remote writes, treats the target as data, and asks for a model in the LENS line, lens-round-number ids and a HELD line
   - Verdict adds INCOMPLETE, a reviewers line, contested and fixed-unreviewed outcomes, and moves "checked at" to the lead judgment
   - The judge can mark a finding contested, a judge subagent gets the reviewers' no-edit type and read-only paragraph, REJECT wins over CONTESTED, and a PASS line names open accepted mediums

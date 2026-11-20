@@ -1,6 +1,6 @@
 Only in local: agents/openai.yaml
 diff --git a/upstream/SKILL.md b/local/SKILL.md
-index a8d8e26306a80bd4203cb6d57b23753a6d6df50d..44c15ac417e606dbb2e09f690e487e5804aba77e 100644
+index a8d8e26306a80bd4203cb6d57b23753a6d6df50d..8882505726b3f6050a43799d1a3ea35ac6a46888 100644
 --- a/upstream/SKILL.md
 +++ b/local/SKILL.md
 @@ -1,6 +1,6 @@
@@ -25,8 +25,8 @@ index a8d8e26306a80bd4203cb6d57b23753a6d6df50d..44c15ac417e606dbb2e09f690e487e58
 +| Role | Tier | Claude Code |
 +|------|------|-------------|
 +| Explorer | fast | `subagent_type: Explore` (or `general-purpose` with the read-only instruction), `model: sonnet` |
-+| Explainer (direct or synthesizer) | strong | `subagent_type: general-purpose`, `model: opus` |
-+| Critic | strongest available | `subagent_type: general-purpose`, `model: fable` where offered, else `opus` |
++| Explainer (direct or synthesizer) | strong | `subagent_type: Plan` (no Edit or Write), `model: opus` |
++| Critic | strongest available | `subagent_type: Plan` (no Edit or Write), `model: fable` where offered, else `opus` |
 +
 +On another harness, map each tier to its nearest equivalent.
  
@@ -45,20 +45,21 @@ index a8d8e26306a80bd4203cb6d57b23753a6d6df50d..44c15ac417e606dbb2e09f690e487e58
  
  Each explorer gets the same base prompt from `references/explorer-prompt.md`, plus a specific exploration angle telling it which slice to focus on. Each explorer should:
  - Start broad: Glob for relevant directories, Grep for key types/interfaces/class names
-@@ -61,11 +69,7 @@ Then proceed to Step 3.
+@@ -61,23 +69,15 @@ Then proceed to Step 3.
  
  ### Step 2b — Direct Explain (simple questions)
  
 -Spawn a single Task subagent that explores and explains in one pass:
--
++Spawn a single Task subagent, with the Explainer settings from Subagents, that explores and explains in one pass.
+ 
 -- `subagent_type`: `generalPurpose`
 -- `model`: `claude-opus-4.6`
 -- `readonly`: `true`
-+Spawn a single Task subagent, with the Explainer settings from Subagents, that explores and explains in one pass.
+-
+-This agent does its own exploration (Glob, Grep, Read) and writes the explanation directly. Read `references/explainer-prompt.md` for the communication style and output format — the agent follows the same structure, it just doesn't have explorer findings as input.
++This agent does its own exploration (Glob, Grep, Read) and writes the explanation directly. Build its prompt from `references/explainer-prompt.md`, read-only line included, for the communication style and output format — the agent follows the same structure, it just doesn't have explorer findings as input, so leave out the template's findings section and its synthesis framing.
  
- This agent does its own exploration (Glob, Grep, Read) and writes the explanation directly. Read `references/explainer-prompt.md` for the communication style and output format — the agent follows the same structure, it just doesn't have explorer findings as input.
- 
-@@ -73,11 +77,7 @@ Proceed to Step 4.
+ Proceed to Step 4.
  
  ### Step 3 — Synthesize (complex questions only)
  

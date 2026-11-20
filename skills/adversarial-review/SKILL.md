@@ -20,7 +20,7 @@ Turn the target into something a reviewer can read without network access:
 | Target | What the reviewer gets |
 |---|---|
 | Local change in git | `git fetch` first; base is the PR base or `origin/<default branch>`. Reviewer gets `git diff $(git merge-base <base> HEAD) -- <paths>`, plus every file from `git ls-files --others --exclude-standard -- <paths>` listed as a file to read |
-| PR on GitHub, Forgejo or Gitea | In a local clone: `git fetch <remote> <base branch>`, then `git fetch <remote> pull/<n>/head` (the ref works on all three) and record its sha with `git rev-parse FETCH_HEAD`. Record host, PR number, base and head sha. Reviewer gets `git diff <remote>/<base branch>...<head sha>` and reads files with `git show <head sha>:<path>` |
+| PR on GitHub, Forgejo or Gitea | In a local clone: `git fetch <remote> <base branch>` and record the base sha with `git rev-parse FETCH_HEAD`, then `git fetch <remote> pull/<n>/head` (the ref works on all three) and record the head sha the same way. Record host, PR number, base and head sha. Reviewer gets `git diff <base sha>...<head sha>` and reads files with `git show <head sha>:<path>` |
 | Plan, document, or files outside git | The absolute file paths |
 
 Write the **intent** (what the author is trying to achieve) and what is out of scope, two sentences at
@@ -64,8 +64,9 @@ is never replaced by another provider.
 ### 3. Judge
 
 The judge is you only if you did not write the target. If you wrote it, or wrote the plan it
-implements, spawn one judge subagent on the Skeptic's model, with the reviewers' no-edit type and the
-first paragraph of the reviewer prompt, and give it the target, the intent, the raw reviewer replies
+implements, spawn one judge subagent on the Skeptic's model, with the reviewers' no-edit type and
+the read-only rules from the reviewer prompt's first paragraph (not its reviewer framing: the
+judge decides findings, it does not hunt for new ones), and give it the target, the intent, the raw reviewer replies
 and the path of [references/verdict-format.md](references/verdict-format.md), not your view. A judge
 that fails or replies without the format makes the verdict INCOMPLETE.
 
