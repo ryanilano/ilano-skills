@@ -1,6 +1,6 @@
 ---
 name: socials-mirror
-description: "Snapshot a public figure's public profiles (GitHub, Bluesky, LinkedIn, any RSS/Atom feed, Reddit .rss, X posts and threads) to local markdown in one command. Use when asked what someone has been posting, building, or writing, when given an X or Twitter link to read, or for a LinkedIn job posting or job search. Public figures only."
+description: "Snapshot a public figure's public profiles (GitHub, Bluesky, LinkedIn, any RSS/Atom feed, Reddit .rss, X posts and threads) to local markdown in one command. Use when asked what someone has been posting, building, or writing, when given an X or Twitter link to read, for a LinkedIn job posting or job search, or to read feeds NetNewsWire already caches. Public figures only."
 ---
 
 # socials-mirror

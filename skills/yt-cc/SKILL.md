@@ -79,8 +79,9 @@ python3 scripts/ytcc.py serve
 ```
 
 Serves every grabbed video as a card at `http://127.0.0.1:8091`, newest first,
-with search. It binds loopback. To reach it from a phone or tablet, front it
-with `tailscale serve` rather than binding it to all interfaces.
+with search. It binds to localhost only. To open it on another device, ask the
+user how they want to expose it (an SSH tunnel, a reverse proxy, a VPN they
+run), and keep `YTCC_HOST` at `127.0.0.1` unless they choose otherwise.
 
 ## Requirements
 

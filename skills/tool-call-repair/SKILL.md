@@ -1,6 +1,6 @@
 ---
 name: tool-call-repair
-description: "Validate-then-repair for malformed LLM tool-call inputs, so a recoverable mistake is fixed at the failing path instead of failing the call. Use when an open or cheaper model (DeepSeek, Qwen, GLM, Kimi, local) keeps failing a strict tool schema: null for an optional field, a stringified array, a bare string for an array, an empty {} placeholder, a markdown-autolinked path."
+description: "Validate-then-repair for malformed LLM tool-call inputs, so a recoverable mistake is fixed at the failing path instead of failing the call. Use when an open or cheaper model (DeepSeek, Qwen, GLM, local) keeps failing a strict tool schema: null for an optional field, a stringified array, a bare string for an array, an empty {} placeholder, a markdown-autolinked path."
 ---
 
 # tool-call-repair

@@ -61,16 +61,16 @@ Two drafts of the same piece, one decision per section. Lays both side by side, 
 
 Which card for this purchase, and is that card worth its fee? Works out the delta, value back minus cost, from a wallet file you own: expiring credits first, then targeted offers, portals, card earn and loyalty status, all in cents. Counts overlapping perks once and credits you wouldn't spend as zero. Instructions only; no card numbers, balances or logins ever stored. Plain-language walkthrough in [the skill README](skills/deltamaxx/README.md).
 
-## Vendored skills
+## Skills by other authors
 
-Byte-identical copies of other people's skills, pinned to a commit. `scripts/validate.sh` diffs each one against its upstream on every run, and `scripts/diff-upstream.sh <skill> --latest` shows what upstream changed since. Each directory carries the upstream license as `LICENSE.upstream` and a `PROVENANCE.yaml` with the repo, SHA, path and fetch time.
+Copies of other people's skills, pinned to a commit, each with one small local change listed under `modifications` in its `PROVENANCE.yaml`. `scripts/diff-upstream.sh <skill>` shows exactly what differs from the pin, and `--latest` shows what upstream changed since. Each directory carries the upstream license as `LICENSE.upstream` and a `PROVENANCE.yaml` with the repo, SHA, path and fetch time.
 
-| Skill | What it does | Source | Author | License | Pinned commit |
-|---|---|---|---|---|---|
-| [humanizer](skills/humanizer) | Edit loop that removes the tells of AI prose, from Wikipedia's "Signs of AI writing" | [blader/humanizer](https://github.com/blader/humanizer) | Siqi Chen | MIT | `b48c832` (v4.0.0, 2026-11-09) |
-| [writing-fragments](skills/writing-fragments) | Explore: interview the author, append fragments to one file, no structure yet | [mattpocock/skills](https://github.com/mattpocock/skills) | Matt Pocock | MIT | `3cca18b` (2026-09-04) |
-| [writing-beats](skills/writing-beats) | Exploit: grow the article one beat at a time, author picks the next beat | [mattpocock/skills](https://github.com/mattpocock/skills) | Matt Pocock | MIT | `3cca18b` (2026-09-04) |
-| [writing-shape](skills/writing-shape) | Exploit: pick an opening, grow the article block by block, ground every concept first | [mattpocock/skills](https://github.com/mattpocock/skills) | Matt Pocock | MIT | `3cca18b` (2026-09-04) |
+| Skill | What it does | Source | Author | License | Pinned commit | Local change |
+|---|---|---|---|---|---|---|
+| [humanizer](skills/humanizer) | Edit loop that removes the tells of AI prose, from Wikipedia's "Signs of AI writing" | [blader/humanizer](https://github.com/blader/humanizer) | Siqi Chen | MIT | `b48c832` (v4.0.0, 2026-11-09) | A "Review only" mode: a review of your own draft lists the tells and changes nothing until you ask for a rewrite |
+| [writing-fragments](skills/writing-fragments) | Explore: interview the author, append fragments to one file, no structure yet | [mattpocock/skills](https://github.com/mattpocock/skills) | Matt Pocock | MIT | `3cca18b` (2026-09-04) | A credit line at the end of SKILL.md |
+| [writing-beats](skills/writing-beats) | Exploit: grow the article one beat at a time, author picks the next beat | [mattpocock/skills](https://github.com/mattpocock/skills) | Matt Pocock | MIT | `3cca18b` (2026-09-04) | A credit line at the end of SKILL.md |
+| [writing-shape](skills/writing-shape) | Exploit: pick an opening, grow the article block by block, ground every concept first | [mattpocock/skills](https://github.com/mattpocock/skills) | Matt Pocock | MIT | `3cca18b` (2026-09-04) | A credit line at the end of SKILL.md |
 
 How the writing skills chain: writing-fragments builds the pile, writing-shape or writing-beats turns the pile into an article, humanizer edits the result. The three Pocock writing skills are user-invoked only (`disable-model-invocation: true` upstream).
 
@@ -90,4 +90,4 @@ skills/
 
 ## Credits
 
-Skills under "Skills" are original, except ffmpeg, which is a fork of [MastroMimmo/ffmpeg-skill](https://github.com/MastroMimmo/ffmpeg-skill) (MIT) with the modifications listed in its PROVENANCE.yaml. Skills under "Vendored skills" belong to their authors, named in each directory's PROVENANCE.yaml and LICENSE.upstream.
+Skills under "Skills" are original, except ffmpeg, which is a fork of [MastroMimmo/ffmpeg-skill](https://github.com/MastroMimmo/ffmpeg-skill) (MIT) with the modifications listed in its PROVENANCE.yaml. Skills under "Skills by other authors" belong to their authors, named in each directory's PROVENANCE.yaml and LICENSE.upstream.

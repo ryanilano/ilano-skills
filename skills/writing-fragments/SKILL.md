@@ -77,3 +77,5 @@ Before every write: re-read the file from disk. The user may have edited, reorde
 The user can say "cut the last one", "rewrite that one sharper", "merge those two" at any time. Treat those as first-class instructions.
 
 </supporting-info>
+
+Credit: Matt Pocock, from [mattpocock/skills](https://github.com/mattpocock/skills) (MIT).

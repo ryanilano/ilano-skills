@@ -1,6 +1,6 @@
 ---
 name: docs-mirror
-description: "Mirror a documentation site or an RSS/Atom feed to local markdown in one command. Use when you need two or more pages from one site, when the user asks to mirror or grab docs, or for a blog's archive or feed. A single page is a plain fetch."
+description: "Mirror a documentation site or an RSS/Atom feed to local markdown in one command. Use when you need two or more pages from one site, when the user asks to mirror or grab docs, or for a blog's archive or feed. For a single page, use a plain single-page fetch instead."
 ---
 
 # docs-mirror
