@@ -8,7 +8,7 @@ Agent skills I make and use, built on the open [Agent Skills](https://agentskill
 npx skills add ryanilano/ilano-skills
 ```
 
-Install, verify and uninstall steps for Claude Code, OpenCode, Codex, Kimi Code CLI, Qwen Code, Gemini CLI and a plain copy are in [INSTALL.md](INSTALL.md).
+Install, verify and uninstall steps for Claude Code, OpenCode, Codex, Qwen Code, Gemini CLI and a plain copy are in [INSTALL.md](INSTALL.md).
 
 Or as a Claude Code plugin:
 

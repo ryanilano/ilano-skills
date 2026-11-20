@@ -122,7 +122,6 @@ manifests = [
     (".claude-plugin/plugin.json", ".claude-plugin/plugin.json", []),
     (".claude-plugin/marketplace.json plugins[0]", ".claude-plugin/marketplace.json", ["plugins", 0]),
     (".codex-plugin/plugin.json", ".codex-plugin/plugin.json", []),
-    ("kimi.plugin.json", "kimi.plugin.json", []),
     ("qwen-extension.json", "qwen-extension.json", []),
     ("gemini-extension.json", "gemini-extension.json", []),
 ]

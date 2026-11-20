@@ -103,10 +103,10 @@ check_validate "fork without upstream.patch fails" 1 "upstream.patch is missing"
 
 # --- validate.sh: harness manifest version and description ----------------------
 
-copy_manifests() { # copy the repo's six harness manifests into the fixture
+copy_manifests() { # copy the repo's five harness manifests into the fixture
   local f
   for f in .claude-plugin/plugin.json .claude-plugin/marketplace.json .codex-plugin/plugin.json \
-           kimi.plugin.json qwen-extension.json gemini-extension.json; do
+           qwen-extension.json gemini-extension.json; do
     mkdir -p "$FIX/$(dirname "$f")"
     cp "$ROOT/$f" "$FIX/$f"
   done
@@ -120,8 +120,8 @@ check_validate "matching harness manifests pass" 0 "OK: 1 skill"
 reset_fixture
 make_skill good-skill original
 copy_manifests
-python3 -c 'import json,sys; p=sys.argv[1]; d=json.load(open(p)); d["version"]="9.9.9"; json.dump(d,open(p,"w"))' "$FIX/kimi.plugin.json"
-check_validate "drifted version in one manifest fails" 1 "kimi.plugin.json version '9.9.9' differs"
+python3 -c 'import json,sys; p=sys.argv[1]; d=json.load(open(p)); d["version"]="9.9.9"; json.dump(d,open(p,"w"))' "$FIX/qwen-extension.json"
+check_validate "drifted version in one manifest fails" 1 "qwen-extension.json version '9.9.9' differs"
 
 reset_fixture
 make_skill good-skill original
