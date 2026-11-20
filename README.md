@@ -45,10 +45,6 @@ Snapshots a public figure's public profiles (GitHub, Bluesky, any RSS/Atom feed,
 
 Video, audio and image-sequence editing through one JSON-returning helper (`fftools.py`, 18 commands, by MastroMimmo, MIT). Forked: the script is upstream's, the skill text is rewritten steps-first with the catalog disclosed to `references/`. Pairs with yt-cc's `--video`. Plain-language walkthrough in [the skill README](skills/ffmpeg/README.md).
 
-### [tool-call-repair](skills/tool-call-repair)
-
-Validate-then-repair for malformed LLM tool-call inputs, so open and cheaper models stop bouncing off strict schemas. Independent Python reimplementation of Ahmad Awais's documented technique; stdlib only. Plain-language walkthrough in [the skill README](skills/tool-call-repair/README.md).
-
 ### [spamcheck](skills/spamcheck)
 
 You clicked unsubscribe and the mail kept coming. This reads one saved email and says whether that is the sender's fault, which law it touches, and who can act on it. It checks the hidden `List-Unsubscribe` header that powers the Unsubscribe button in Gmail and Apple Mail, probes the link for a real status code, and classifies the message commercial or political first, because CAN-SPAM only reaches commercial mail. It also dates your unsubscribe click, so the ten business day rule becomes usable. Also reads text messages: spots toll, package and bank scams, checks STOP handling, quiet hours and the ten business day window under the TCPA, and never opens a link from a text. Never opens a mailbox, never sends anything. Plain-language walkthrough in [the skill README](skills/spamcheck/README.md); legal citations quoted from primary sources in `references/`.
