@@ -81,7 +81,8 @@ the line it was checked at.
 
 ### 4. Rounds (only when fixing is part of the task)
 
-A round is one review. Before each round's fixes, take a new snapshot of the target (in git: the sha
+A round is one review. Fixes land on the local tree, so for a PR target check out the PR head first
+(its branch, or a worktree at `<head sha>`). Before each round's fixes, take a new snapshot of the target (in git: the sha
 from `git stash create`, or `HEAD` when it prints nothing on a clean tree, plus a scratch copy of
 untracked files; outside git: copy the files to a scratch folder). Fix accepted findings with the
 smallest change, then spawn fresh reviewers (same lenses) with the fix as the target (its diff against

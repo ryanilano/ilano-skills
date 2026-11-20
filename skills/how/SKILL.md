@@ -14,11 +14,11 @@ Two modes:
 
 ## Subagents
 
-Every subagent is read-only: its prompt says to read and search, never to edit, write or run anything that changes state. Pick each role's model by tier:
+Every subagent is read-only: its prompt says to read and search, never to edit, write or run anything that changes state. `Explore` and `Plan` have no Edit or Write, but they keep Bash, so read-only there rests on that prompt line. Pick each role's model by tier:
 
 | Role | Tier | Claude Code |
 |------|------|-------------|
-| Explorer | fast | `subagent_type: Explore` (or `general-purpose` with the read-only instruction), `model: sonnet` |
+| Explorer | fast | `subagent_type: Explore` (no Edit or Write), `model: sonnet` |
 | Explainer (direct or synthesizer) | strong | `subagent_type: Plan` (no Edit or Write), `model: opus` |
 | Critic | strongest available | `subagent_type: Plan` (no Edit or Write), `model: fable` where offered, else `opus` |
 

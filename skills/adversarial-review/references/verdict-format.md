@@ -26,7 +26,8 @@ Reviewers: <lens (model): replied | failed: reason>, ... Judge: <self | fable ch
 
 - INCOMPLETE: a planned reviewer or the judge failed, or a reply lacks the LENS line, the VERDICT line
   or the findings block (trailing text, such as a Plan agent's file list, is ignored). Wins over the others.
-- Check the model in each LENS line against the reviewers line.
+- Check the model in each LENS line against the reviewers line. A mismatch is named in the verdict line
+  and does not change the verdict on its own (a model's report of its own name can be wrong).
 - REJECT: an accepted high finding is open and unfixed. Wins over CONTESTED.
 - CONTESTED: a high finding the judge marked contested (not confirmed at its line, or reviewers
   disagree), or an accepted high logged `fixed, unreviewed`. A contested high blocks PASS.

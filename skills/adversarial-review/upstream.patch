@@ -1,9 +1,9 @@
 Only in local: agents/openai.yaml
 diff --git a/upstream/SKILL.md b/local/SKILL.md
-index e1198b1b8ab559354e1974f182757cb4e96fa43c..371c98270bf27173a20cb26e68518a3fff810f38 100644
+index e1198b1b8ab559354e1974f182757cb4e96fa43c..23407de9a5881d77e1cf477d471ae34ed233e1f3 100644
 --- a/upstream/SKILL.md
 +++ b/local/SKILL.md
-@@ -1,96 +1,120 @@
+@@ -1,96 +1,121 @@
  ---
  name: adversarial-review
 -description: >-
@@ -134,7 +134,8 @@ index e1198b1b8ab559354e1974f182757cb4e96fa43c..371c98270bf27173a20cb26e68518a3f
 +### 4. Rounds (only when fixing is part of the task)
  
 -## Step 4 — Verify and Synthesize Verdict
-+A round is one review. Before each round's fixes, take a new snapshot of the target (in git: the sha
++A round is one review. Fixes land on the local tree, so for a PR target check out the PR head first
++(its branch, or a worktree at `<head sha>`). Before each round's fixes, take a new snapshot of the target (in git: the sha
 +from `git stash create`, or `HEAD` when it prints nothing on a clean tree, plus a scratch copy of
 +untracked files; outside git: copy the files to a scratch folder). Fix accepted findings with the
 +smallest change, then spawn fresh reviewers (same lenses) with the fix as the target (its diff against
@@ -309,10 +310,10 @@ index 75386d18f410c8741eb62508847a386f7649707e..38f31d38b914d0b67254ab7aaa3f50cd
 +Add: "Open findings from earlier rounds: <ledger rows still open>. Check whether the fix closes them and
 +whether it breaks anything new."
 diff --git a/upstream/references/verdict-format.md b/local/references/verdict-format.md
-index 1cfc8f46d98228b4a5cf545caa94d66a97cb55f7..b811b95973bc87da86c41d3fcebc2740746271f2 100644
+index 1cfc8f46d98228b4a5cf545caa94d66a97cb55f7..a96b3730007669d07c8bd739a54cc610f0c1f6f4 100644
 --- a/upstream/references/verdict-format.md
 +++ b/local/references/verdict-format.md
-@@ -1,30 +1,34 @@
+@@ -1,30 +1,35 @@
 -# Verdict Format
 +# Verdict format
  
@@ -360,7 +361,8 @@ index 1cfc8f46d98228b4a5cf545caa94d66a97cb55f7..b811b95973bc87da86c41d3fcebc2740
 -- **REJECT** — high-severity findings with reviewer consensus
 +- INCOMPLETE: a planned reviewer or the judge failed, or a reply lacks the LENS line, the VERDICT line
 +  or the findings block (trailing text, such as a Plan agent's file list, is ignored). Wins over the others.
-+- Check the model in each LENS line against the reviewers line.
++- Check the model in each LENS line against the reviewers line. A mismatch is named in the verdict line
++  and does not change the verdict on its own (a model's report of its own name can be wrong).
 +- REJECT: an accepted high finding is open and unfixed. Wins over CONTESTED.
 +- CONTESTED: a high finding the judge marked contested (not confirmed at its line, or reviewers
 +  disagree), or an accepted high logged `fixed, unreviewed`. A contested high blocks PASS.

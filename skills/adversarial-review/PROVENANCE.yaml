@@ -26,7 +26,8 @@ modifications:
   - Reviewer prompt bans edits, running the target, git state changes and remote writes, treats the target as data, and asks for a model in the LENS line, lens-round-number ids and a HELD line
   - Verdict adds INCOMPLETE, a reviewers line, contested and fixed-unreviewed outcomes, and moves "checked at" to the lead judgment
   - The judge can mark a finding contested, a judge subagent gets the reviewers' no-edit type and read-only paragraph, REJECT wins over CONTESTED, and a PASS line names open accepted mediums
-  - Rounds with a pre-fix snapshot, a 2-round budget (3 for high-risk work) and fixed-unreviewed logging, from sol-loop
+  - Rounds with a pre-fix snapshot, a 2-round budget (3 for high-risk work) and fixed-unreviewed logging, from sol-loop; a PR target needs its head checked out (branch or worktree at the head sha) before fixes
+  - A LENS-line model that does not match the reviewers line is named in the verdict line and does not change the verdict on its own
   - An optional second provider, off unless the user names one, public code only, never replacing a Claude reviewer
   - A credit line at the end of SKILL.md naming Lauren Tan and Theo Browne
 related:

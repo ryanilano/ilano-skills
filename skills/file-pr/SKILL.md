@@ -5,13 +5,16 @@ description: File a concise pull request. Use when the user asks to file or open
 
 # File PR
 
-Read the remote you will push to with `git remote get-url <remote>`. A GitHub
-remote uses `gh`. A Forgejo or Gitea remote uses `tea`, adding
-`--remote <remote>` when the repo has several; check `tea logins list` has a
-login for that host.
+Name two remotes. The push remote is where the branch goes. The base remote is
+the repo the PR opens on. They are the same remote unless the branch goes to a
+fork, where the push remote is the fork and the base remote is upstream. Read
+the base remote with `git remote get-url <base-remote>` and take its
+`<owner>/<repo>`; that picks the host CLI. A GitHub base uses `gh`. A Forgejo or
+Gitea base uses `tea`; check `tea logins list` has a login for that host.
 
 Before filing, check whether a PR for this branch already exists
-(`gh pr list --head <branch>`, or `tea pr list --fields index,head,url` and
+(`gh pr list --repo <owner>/<repo> --head <branch>`, or
+`tea pr list --repo <owner>/<repo> --fields index,head,url` and
 match the head). Review the diff locally against the base branch (usually
 `origin/main`) to make sure its contents match the goal.
 
@@ -42,22 +45,26 @@ GOOD
 The description ends with the solution. It carries no model, harness, or
 session footer.
 
-Before submission, check the title, description, quotes, and attachments for
-secrets and private details.
+Before pushing, check for secrets and private details in everything that will
+leave the machine: the commits being pushed (`git log -p <base>..HEAD`, diffs
+and messages) and the title, description, quotes, and attachments. A secret
+that reaches the remote counts as leaked even if the PR is never opened.
 
 Push the branch before creating the PR: every create command below needs it on
 the remote, and if the user declines the push, stop. Pushing stays the user's call. State the exact command,
-`git push <remote> HEAD:<branch>`, and wait for a yes, unless the user already
-said to push in this request.
+`git push <push-remote> HEAD:<branch>`, with what it sends (commit count and
+range, from `git log --oneline <base>..HEAD`), and wait for a yes, unless the
+user already said to push in this request.
 
 Creating the PR on the remote is the action the user asked for. Open a real PR
 rather than a draft so review bots run. On GitHub, run
-`gh pr create --head <head> --base <base> --title <title> --body-file <file>`.
+`gh pr create --repo <owner>/<repo> --head <head> --base <base> --title <title> --body-file <file>`.
 On Forgejo or Gitea, run
-`tea pr create --head <head> --base <base> --title <title> --description-file <file>`.
-`<head>` is the branch name, or `<owner>:<branch>` when the branch was pushed to a fork.
+`tea pr create --repo <owner>/<repo> --remote <base-remote> --head <head> --base <base> --title <title> --description-file <file>`.
+`<owner>/<repo>` is the base remote's. `<head>` is the branch name, or
+`<fork-owner>:<branch>` when the branch was pushed to a fork.
 On GitHub, if `gh pr create` fails because the GraphQL rate limit is used up,
-open it through REST with
+open it through REST on the base repo with
 `gh api repos/<owner>/<repo>/pulls -f title=... -f head=<head> -f base=... -F body=@<file>`. If the user also asked
 to watch it through review and CI, use a PR watcher or review skill if one is
 available.
