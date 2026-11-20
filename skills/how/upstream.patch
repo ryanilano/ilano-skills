@@ -97,3 +97,42 @@ index a8d8e26306a80bd4203cb6d57b23753a6d6df50d..44c15ac417e606dbb2e09f690e487e58
  Present the explanation first (from Step 1), then the critique verdict below it. The explanation should stand on its own — someone who just wants to understand the system shouldn't have to wade through critique.
 +
 +Credit: Lauren Tan (poteto), from [poteto/how](https://github.com/poteto/how) (MIT).
+diff --git a/upstream/references/critic-prompt.md b/local/references/critic-prompt.md
+index a9dfb601c85447d7051a96d61f254e9dda3be7c3..7488c494c02b7992bbc66fa3286cfaa4545c5d74 100644
+--- a/upstream/references/critic-prompt.md
++++ b/local/references/critic-prompt.md
+@@ -6,6 +6,8 @@ Use this template to build the prompt for each critic subagent. Fill in the plac
+ 
+ You are reviewing the architecture of a codebase subsystem. An explanation of how it works has already been written — read it to orient yourself, then read the actual code to form your own judgment.
+ 
++You read only: read and search, and never edit, write, or run anything that changes state.
++
+ ## Architectural Explanation
+ 
+ {EXPLANATION}
+diff --git a/upstream/references/explainer-prompt.md b/local/references/explainer-prompt.md
+index bb5889628387cf54792aa29709da368be1c5adab..3581e63144d56c92407a45964856db2f6b080a8d 100644
+--- a/upstream/references/explainer-prompt.md
++++ b/local/references/explainer-prompt.md
+@@ -6,6 +6,8 @@ Use this template to build the prompt for the explainer subagent. Fill in the pl
+ 
+ You are writing an architectural explanation for a senior engineer. Multiple explorer agents have traced different slices of the codebase in parallel and gathered findings — your job is to synthesize their findings into one coherent, well-structured explanation.
+ 
++You read only: read and search, and never edit, write, or run anything that changes state.
++
+ ## Original Question
+ 
+ > {QUESTION}
+diff --git a/upstream/references/explorer-prompt.md b/local/references/explorer-prompt.md
+index f65a51b9bb51c0b452904fdeac19606c71362ce1..0d8105cefcaca3c5d251112bcb5de24a5c6769d5 100644
+--- a/upstream/references/explorer-prompt.md
++++ b/local/references/explorer-prompt.md
+@@ -8,6 +8,8 @@ You are exploring a codebase to understand how something works. Your job is to g
+ 
+ Other explorers are investigating different slices of the same subsystem in parallel. Don't worry about covering everything — focus on your assigned angle and go deep.
+ 
++You read only: read and search, and never edit, write, or run anything that changes state.
++
+ ## Question
+ 
+ > {QUESTION}

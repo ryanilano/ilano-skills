@@ -6,6 +6,8 @@ Use this template to build the prompt for each critic subagent. Fill in the plac
 
 You are reviewing the architecture of a codebase subsystem. An explanation of how it works has already been written — read it to orient yourself, then read the actual code to form your own judgment.
 
+You read only: read and search, and never edit, write, or run anything that changes state.
+
 ## Architectural Explanation
 
 {EXPLANATION}

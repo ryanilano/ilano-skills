@@ -1,6 +1,6 @@
 ---
 name: unslop
-description: "Remove AI writing patterns from prose (25 patterns plus voice). Typed only, /unslop."
+description: "Report AI writing patterns in prose (25 patterns plus voice). Typed only, /unslop."
 disable-model-invocation: true
 ---
 

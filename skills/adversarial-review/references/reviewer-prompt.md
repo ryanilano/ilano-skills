@@ -19,7 +19,7 @@ Checks already run: <command and result, or "none">
 Context you may read: <the user's rule files, related files>
 
 Your lens:
-<paste that lens's section from lenses.md>
+<paste that lens's section from reviewer-lenses.md>
 
 Read the target and what surrounds it. Stay inside your lens.
 
@@ -34,6 +34,7 @@ Findings, highest severity first, ids are lens letter, round, number (S1-1, A1-2
 HELD: one or two things you attacked that held up, with file:line.
 ```
 
-Round 2 and later: same template, a fresh agent. Target is the fix (its diff against the pre-fix snapshot).
+Round 2 and later: same template, a fresh agent. Target is the fix (its diff against this round's
+pre-fix snapshot, plus untracked files to read).
 Add: "Open findings from earlier rounds: <ledger rows still open>. Check whether the fix closes them and
 whether it breaks anything new."

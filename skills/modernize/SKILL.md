@@ -15,17 +15,23 @@ PR still belongs in the product.
 Read the PR's remote with `git remote get-url <remote>`. A GitHub remote uses
 `gh`. A Forgejo or Gitea remote uses `tea` (`tea pr <n>` for details,
 `tea pr list --state all` to search), adding `--remote <remote>` when the repo
-has several. Without `tea` or a login for that host (`tea logins list`), read
-the PR with plain git: `git fetch <remote> pull/<n>/head` works on both hosts.
+has several. In step 6, `<branch>` is the PR's head branch and `<head-remote>`
+is a remote for its head repository (the fork, for a cross-repository PR), both
+read from `gh pr view <n>` or `tea pr <n>`. Without `tea` or a login for that
+host (`tea logins list`), read the PR with plain git:
+`git fetch <remote> pull/<n>/head` works on both hosts but names neither, so the
+plain-git path is read-only: report the disposition and stop before step 6.
 
 ## Guardrails
 
-- Always check to make sure you have pulled latest origin for your branch, main
-  branch, and any other branch related to your work before starting.
+- Before starting, fetch the latest remote state for your branch, the base
+  branch, and any other branch related to your work. Fetch only; never
+  `git pull` in the user's checkout.
 - Treat existing worktree changes as user-owned. Use a disposable worktree when
   the active worktree is dirty or is being used for other work.
-- Modernizing authorizes rebasing and updating the PR branch only. It does not
-  authorize merging, closing, changing the base branch, or expanding scope.
+- Modernizing authorizes rebasing the PR branch locally; the push is gated
+  below. It does not authorize merging, closing, changing the base branch, or
+  expanding scope.
 - Pushing stays the user's call. Before any push, state the exact push command
   and wait for a yes, unless the user already said to push in this request.
 - Never use an unqualified force push. Update a rebased branch with
@@ -68,7 +74,8 @@ Do not describe a PR as current merely because Git reports no conflicts.
 Use one of these recommendations:
 
 - **MODERNIZE**: the goal is still useful and the implementation remains the
-  right shape. Rebase, resolve conflicts, test, and update the branch.
+  right shape. Rebase, resolve conflicts, test, and update the branch once the
+  push is cleared under Guardrails.
 - **REWORK**: the goal is still useful, but a mechanical rebase would preserve
   the wrong implementation. Explain the smallest credible rewrite and stop
   before pushing unless the user also asked for that rework.

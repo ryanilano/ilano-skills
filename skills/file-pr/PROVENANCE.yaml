@@ -19,6 +19,7 @@ modifications:
   - Description pruned to one trigger branch ("file or open a PR"); "create" was a synonym of the same branch
   - The skill reads the push remote and uses gh on GitHub or tea on Forgejo or Gitea (tea logins list, tea pr list --fields index,head,url, tea pr create --head --base --title --description-file, --remote); tea flags checked against tea 0.16.0 --help
   - The existing-PR check names the command for each host
+  - A push step before the PR is created: the agent states the exact git push <remote> HEAD:<branch> and waits for a yes unless the user already said to push; gh pr create gets --head, --base, --title and --body-file
   - The attribution footer requirement ("Created with <model> in <harness>", plus subagent models) is removed; the description ends with the solution and carries no model, harness or session footer
   - The real-PR-not-draft line is kept, with a note that creating the PR on the remote is the action the user asked for; the GraphQL rate-limit REST fallback is marked as GitHub only
   - The dependencies on the upstream babysit-pr and leaving-pr-comments skills, which this repo does not ship, are replaced with "use a PR watcher, review or PR comment skill if one is available"

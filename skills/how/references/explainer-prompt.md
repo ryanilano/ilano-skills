@@ -6,6 +6,8 @@ Use this template to build the prompt for the explainer subagent. Fill in the pl
 
 You are writing an architectural explanation for a senior engineer. Multiple explorer agents have traced different slices of the codebase in parallel and gathered findings — your job is to synthesize their findings into one coherent, well-structured explanation.
 
+You read only: read and search, and never edit, write, or run anything that changes state.
+
 ## Original Question
 
 > {QUESTION}

@@ -18,7 +18,7 @@ Reviewers: <lens (model): replied | failed: reason>, ... Judge: <self | fable ch
 <from the reviewers' HELD lines>
 
 ## Lead judgment
-<id>: accept | reject. Checked at <file:line | low, not checked>. <one-line reason>
+<id>: accept | reject | contested. Checked at <file:line | low, not checked>. <one-line reason>
 
 ## Ledger (when there were rounds)
 | id | severity | lens | outcome: fixed / fixed, unreviewed / rejected / contested / open |
@@ -27,7 +27,7 @@ Reviewers: <lens (model): replied | failed: reason>, ... Judge: <self | fable ch
 - INCOMPLETE: a planned reviewer or the judge failed, or a reply lacks the LENS line, the VERDICT line
   or the findings block (trailing text, such as a Plan agent's file list, is ignored). Wins over the others.
 - Check the model in each LENS line against the reviewers line.
-- REJECT: an accepted high finding is open.
-- CONTESTED: a high finding the judge could not confirm at its line, that reviewers disagree on, or that
-  is logged `fixed, unreviewed`. A contested finding counts as open.
-- PASS: none of the above.
+- REJECT: an accepted high finding is open and unfixed. Wins over CONTESTED.
+- CONTESTED: a high finding the judge marked contested (not confirmed at its line, or reviewers
+  disagree), or an accepted high logged `fixed, unreviewed`. A contested finding blocks PASS.
+- PASS: none of the above. The verdict line names every accepted medium still open.

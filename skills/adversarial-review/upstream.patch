@@ -1,9 +1,9 @@
 Only in local: agents/openai.yaml
 diff --git a/upstream/SKILL.md b/local/SKILL.md
-index e1198b1b8ab559354e1974f182757cb4e96fa43c..0a68de6e702578ec94aa51ffc25e8afe6e30fb17 100644
+index e1198b1b8ab559354e1974f182757cb4e96fa43c..c3f6db013ffda17e2d5f874cd413737da80e0aeb 100644
 --- a/upstream/SKILL.md
 +++ b/local/SKILL.md
-@@ -1,96 +1,116 @@
+@@ -1,96 +1,119 @@
  ---
  name: adversarial-review
 -description: >-
@@ -20,8 +20,8 @@ index e1198b1b8ab559354e1974f182757cb4e96fa43c..0a68de6e702578ec94aa51ffc25e8afe
 -Spawn reviewers on the **opposite model** to challenge work. Reviewers attack from distinct
 -lenses grounded in brain principles. The deliverable is a synthesized verdict — do NOT make
 -changes.
-+Reviewers attack the work from one **lens** each. A judge who did not write the work accepts or rejects
-+every finding. The review changes nothing; fixing is a separate step the task or the user asks for.
++Reviewers attack the work from one **lens** each. A judge who did not write the work accepts, rejects
++or contests every finding. The review changes nothing; fixing is a separate step the task or the user asks for.
  
 -**Hard constraint:** Reviewers MUST run via the opposite model's CLI (`codex exec` or
 -`claude -p`). Do NOT use subagents, the Agent tool, or any internal delegation mechanism as
@@ -43,7 +43,7 @@ index e1198b1b8ab559354e1974f182757cb4e96fa43c..0a68de6e702578ec94aa51ffc25e8afe
 +| Target | What the reviewer gets |
 +|---|---|
 +| Local change in git | `git fetch` first; base is the PR base or `origin/<default branch>`. Reviewer gets `git diff $(git merge-base <base> HEAD) -- <paths>`, plus every file from `git ls-files --others --exclude-standard -- <paths>` listed as a file to read |
-+| PR on GitHub, Forgejo or Gitea | In a local clone: `git fetch <remote> <base branch> pull/<n>/head` (the ref works on all three). Record host, PR number, base and head sha. Reviewer gets `git diff <base>...<head sha>` and reads files with `git show <head sha>:<path>` |
++| PR on GitHub, Forgejo or Gitea | In a local clone: `git fetch <remote> <base branch>`, then `git fetch <remote> pull/<n>/head` (the ref works on all three) and record its sha with `git rev-parse FETCH_HEAD`. Record host, PR number, base and head sha. Reviewer gets `git diff <remote>/<base branch>...<head sha>` and reads files with `git show <head sha>:<path>` |
 +| Plan, document, or files outside git | The absolute file paths |
  
 -Determine the **intent** — what the author is trying to achieve. This is critical: reviewers
@@ -113,28 +113,31 @@ index e1198b1b8ab559354e1974f182757cb4e96fa43c..0a68de6e702578ec94aa51ffc25e8afe
 -claude -p "prompt" > "$REVIEW_DIR/skeptic.md" 2>/dev/null
 -```
 +The judge is you only if you did not write the target. If you wrote it, or wrote the plan it
-+implements, spawn one judge subagent on the Skeptic's model and give it the target, the intent, the
-+raw reviewer replies and the path of [references/verdict-format.md](references/verdict-format.md), not
-+your view. A judge that fails or replies without the format makes the verdict INCOMPLETE.
++implements, spawn one judge subagent on the Skeptic's model, with the reviewers' no-edit type and the
++first paragraph of the reviewer prompt, and give it the target, the intent, the raw reviewer replies
++and the path of [references/verdict-format.md](references/verdict-format.md), not your view. A judge
++that fails or replies without the format makes the verdict INCOMPLETE.
  
 -Run with `run_in_background: true`.
 +The judge, for every high and medium finding, opens the cited file and line before accepting **or**
 +rejecting it. Merge duplicates. Write the verdict in the format of
-+[references/verdict-format.md](references/verdict-format.md): accept or reject each finding with a
-+one-line reason. Reject overreach, style dressed as substance, and work the intent does not need.
++[references/verdict-format.md](references/verdict-format.md): accept, reject or contest each finding
++with a one-line reason; contest a finding that cannot be confirmed or refuted at its line. Reject
++overreach, style dressed as substance, and work the intent does not need.
  
 -Name each output file after the lens: `skeptic.md`, `architect.md`, `minimalist.md`.
-+Done when every finding has an accept or reject, and every high and medium decision cites the line it
-+was checked at.
++Done when every finding has an accept, reject or contested, and every high and medium decision cites
++the line it was checked at.
  
 -Build each reviewer's prompt using the template in `references/reviewer-prompt.md`.
 +### 4. Rounds (only when fixing is part of the task)
  
 -## Step 4 — Verify and Synthesize Verdict
-+A round is one review. Before fixing, snapshot the target (in git: `git stash create` or a commit, and
-+note the sha; outside git: copy the files to a scratch folder). Fix accepted findings with the smallest
-+change, then spawn fresh reviewers (same lenses) with the fix as the target (its diff against the
-+snapshot) and the ledger of open findings. Budget: 2 rounds; 3 when the Large risk words apply and a
++A round is one review. Before each round's fixes, take a new snapshot of the target (in git: the sha
++from `git stash create`, or `HEAD` when it prints nothing on a clean tree, plus a scratch copy of
++untracked files; outside git: copy the files to a scratch folder). Fix accepted findings with the
++smallest change, then spawn fresh reviewers (same lenses) with the fix as the target (its diff against
++that snapshot, plus new or changed untracked files to read) and the ledger of open findings. Budget: 2 rounds; 3 when the Large risk words apply and a
 +high finding is open. Stop early when a round returns only low findings. A fix made after the last
 +round is logged `fixed, unreviewed`. Budget spent with an accepted high still open is REJECT.
  
@@ -248,10 +251,10 @@ index 53cc6cf1d72fb5ca7ebcc7dc8e041271ea879dae..91f25cd85704556e05c2017ec229ca30
 +- Is this the simplest path to the outcome, or the one that felt most thorough?
 +- Is there an existing skill, script or tool that already does this?
 diff --git a/upstream/references/reviewer-prompt.md b/local/references/reviewer-prompt.md
-index 75386d18f410c8741eb62508847a386f7649707e..7c4f7564bf59272591301ca2c503ebcb613a4006 100644
+index 75386d18f410c8741eb62508847a386f7649707e..83fc50ff0ddbb7df6f79f657778499644a5b4afc 100644
 --- a/upstream/references/reviewer-prompt.md
 +++ b/local/references/reviewer-prompt.md
-@@ -1,14 +1,39 @@
+@@ -1,14 +1,40 @@
 -# Reviewer Prompt Template
 +# Reviewer prompt
  
@@ -284,7 +287,7 @@ index 75386d18f410c8741eb62508847a386f7649707e..7c4f7564bf59272591301ca2c503ebcb
 +Context you may read: <the user's rule files, related files>
 +
 +Your lens:
-+<paste that lens's section from lenses.md>
++<paste that lens's section from reviewer-lenses.md>
 +
 +Read the target and what surrounds it. Stay inside your lens.
 +
@@ -299,11 +302,12 @@ index 75386d18f410c8741eb62508847a386f7649707e..7c4f7564bf59272591301ca2c503ebcb
 +HELD: one or two things you attacked that held up, with file:line.
 +```
 +
-+Round 2 and later: same template, a fresh agent. Target is the fix (its diff against the pre-fix snapshot).
++Round 2 and later: same template, a fresh agent. Target is the fix (its diff against this round's
++pre-fix snapshot, plus untracked files to read).
 +Add: "Open findings from earlier rounds: <ledger rows still open>. Check whether the fix closes them and
 +whether it breaks anything new."
 diff --git a/upstream/references/verdict-format.md b/local/references/verdict-format.md
-index 1cfc8f46d98228b4a5cf545caa94d66a97cb55f7..90a4af6f0474ba20813b8264dc328d9b97651d4a 100644
+index 1cfc8f46d98228b4a5cf545caa94d66a97cb55f7..33bb84c967567d3c9df4e2fc54e916049ee0d1eb 100644
 --- a/upstream/references/verdict-format.md
 +++ b/local/references/verdict-format.md
 @@ -1,30 +1,33 @@
@@ -339,7 +343,7 @@ index 1cfc8f46d98228b4a5cf545caa94d66a97cb55f7..90a4af6f0474ba20813b8264dc328d9b
 -## What Went Well
 -<1-3 things the reviewers found no issue with -- acknowledge good work>
 +## Lead judgment
-+<id>: accept | reject. Checked at <file:line | low, not checked>. <one-line reason>
++<id>: accept | reject | contested. Checked at <file:line | low, not checked>. <one-line reason>
  
 -## Lead Judgment
 -<for each finding: accept or reject with a one-line rationale>
@@ -355,7 +359,7 @@ index 1cfc8f46d98228b4a5cf545caa94d66a97cb55f7..90a4af6f0474ba20813b8264dc328d9b
 +- INCOMPLETE: a planned reviewer or the judge failed, or a reply lacks the LENS line, the VERDICT line
 +  or the findings block (trailing text, such as a Plan agent's file list, is ignored). Wins over the others.
 +- Check the model in each LENS line against the reviewers line.
-+- REJECT: an accepted high finding is open.
-+- CONTESTED: a high finding the judge could not confirm at its line, that reviewers disagree on, or that
-+  is logged `fixed, unreviewed`. A contested finding counts as open.
-+- PASS: none of the above.
++- REJECT: an accepted high finding is open and unfixed. Wins over CONTESTED.
++- CONTESTED: a high finding the judge marked contested (not confirmed at its line, or reviewers
++  disagree), or an accepted high logged `fixed, unreviewed`. A contested finding blocks PASS.
++- PASS: none of the above. The verdict line names every accepted medium still open.
