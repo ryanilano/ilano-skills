@@ -1,4 +1,4 @@
-origin: vendored
+origin: fork
 author: Siqi Chen
 license: MIT
 upstream_repo: https://github.com/blader/humanizer
@@ -8,8 +8,10 @@ upstream_version: 4.0.0
 upstream_url: https://github.com/blader/humanizer/blob/b48c832f0f809c1b5658edbb838c2521b72f2413/SKILL.md
 fetched: 2026-11-12T18:45Z
 note: >-
-  Byte-identical copy of the upstream repository root at the pinned commit
-  (2026-11-09, "Merge pull request #333 from blader/release-4.0.0"). The skill
+  Copy of the upstream repository root at the pinned commit (2026-11-09,
+  "Merge pull request #333 from blader/release-4.0.0"), unchanged except for
+  the modifications below; it was byte-identical until 2026-11-20, and
+  scripts/diff-upstream.sh humanizer shows the local change. The skill
   is Wikipedia's "Signs of AI writing" page turned into an edit loop: mark
   the tells strongest first, draft, check, final. Read in full by Ryan and
   the agent on 2026-09-13 before vendoring; the 3.0.0 to 4.0.0 diff read in
@@ -17,6 +19,7 @@ note: >-
   add a fact" rule: step 2 now says to add a specific detail the editor
   knows to be true where the text is generic. LICENSE.upstream duplicates the
   upstream LICENSE so the credit survives if the copy is ever trimmed.
+modifications:
+  - SKILL.md "What to return" gains a "Review only" mode, placed before file mode. When the user asks for a review, a check, or a list of tells rather than a rewrite, of any text, the skill lists each tell with its line reference and pattern number and leaves the text unchanged, in a file or pasted, until the user asks for a rewrite. It wins over file mode when both could apply. Without it, file mode rewrites the file in place.
 related:
-  - writing-fragments, writing-beats, writing-shape (Matt Pocock, vendored here) build the article; humanizer edits the result
-  - plain-writing (private skill in ~/.claude/skills on Ryan's Macs) is the voice sample humanizer should match on Ryan's prose
+  - writing-fragments, writing-beats, writing-shape (Matt Pocock, forked here with a credit line) build the article; humanizer edits the result

@@ -1,4 +1,4 @@
-origin: vendored
+origin: fork
 author: Matt Pocock
 license: MIT
 upstream_repo: https://github.com/mattpocock/skills
@@ -7,12 +7,16 @@ upstream_path: skills/in-progress/writing-shape
 upstream_url: https://github.com/mattpocock/skills/blob/3cca18b368ae95cdbdebbff572ccafa662551015/skills/in-progress/writing-shape/SKILL.md
 fetched: 2026-09-13T02:36Z
 note: >-
-  Byte-identical copy of the upstream directory at the pinned commit
-  (2026-09-04). Upstream keeps it under skills/in-progress and marks it
+  Copy of the upstream directory at the pinned commit (2026-09-04), unchanged
+  except for the credit line listed under modifications; it was byte-identical
+  until 2026-11-20, and scripts/diff-upstream.sh writing-shape shows the local
+  change. Upstream keeps it under skills/in-progress and marks it
   disable-model-invocation. The other exploit path: read the pile end to end,
   agree prerequisites, pick an opening, then grow the article block by block
   with the grounding rule and an argument about form for every block. Read
   in full on 2026-09-13 before vendoring.
+modifications:
+  - One credit line added at the end of SKILL.md naming Matt Pocock and linking mattpocock/skills, so the credit travels with the file when SKILL.md is copied on its own
 related:
   - writing-fragments produces the raw pile this skill mines
   - writing-beats is the sibling exploit path

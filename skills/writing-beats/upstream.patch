@@ -1,0 +1,10 @@
+diff --git a/upstream/SKILL.md b/local/SKILL.md
+index 3d3b25b605491adc5c62ae5423127717a94b9632..8e359de8604a6746a424f1fb61793fb1b06710cb 100644
+--- a/upstream/SKILL.md
++++ b/local/SKILL.md
+@@ -65,3 +65,5 @@ The article ends when the journey is complete, not when the pile is empty. Most
+ - If the user says "rewrite that beat" or "go back and try a different beat 3", do it: edit in place, leave the rest alone.
+ 
+ </supporting-info>
++
++Credit: Matt Pocock, from [mattpocock/skills](https://github.com/mattpocock/skills) (MIT).

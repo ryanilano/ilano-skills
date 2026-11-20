@@ -99,7 +99,7 @@ reset_fixture
 make_skill forked fork
 touch "$FIX/skills/forked/LICENSE.upstream"
 printf 'origin: fork\nmodifications:\n  - changed a thing\n' > "$FIX/skills/forked/PROVENANCE.yaml"
-check_validate "well-formed fork passes" 0 "OK: 1 skill"
+check_validate "fork without upstream.patch fails" 1 "upstream.patch is missing"
 
 # --- validate.sh: harness manifest version and description ----------------------
 
@@ -137,12 +137,15 @@ check_validate "missing harness manifest fails" 1 "gemini-extension.json is miss
 
 # --- vendored branch, against a local file:// upstream --------------------------
 
-setup_upstream() { # creates $UP and $UPSHA with skill content under myskill/
+setup_upstream() { # creates $UP and $UPSHA with skill content under myskill/ and myfork/
   UP="$TMP/upstream"
   rm -rf "$UP"
   git init -q "$UP"
-  mkdir -p "$UP/myskill"
+  mkdir -p "$UP/myskill" "$UP/myfork/scripts"
   printf -- '---\nname: vendored-skill\ndescription: test skill\n---\n' > "$UP/myskill/SKILL.md"
+  printf -- '---\nname: forked-skill\ndescription: test skill\n---\n\nBody.\n' > "$UP/myfork/SKILL.md"
+  printf 'print("upstream")\n' > "$UP/myfork/scripts/tool.py"
+  printf 'upstream readme\n' > "$UP/myfork/README.md"
   git -C "$UP" -c user.email=test@test -c user.name=test add -A
   git -C "$UP" -c user.email=test@test -c user.name=test commit -qm 'upstream content'
   git -C "$UP" config uploadpack.allowAnySHA1InWant true
@@ -182,6 +185,86 @@ make_vendored "$UPSHA"
 sed -i.bak '/upstream_path/d' "$FIX/skills/vendored-skill/PROVENANCE.yaml" && rm -f "$FIX/skills/vendored-skill/PROVENANCE.yaml.bak"
 check_validate "vendored skill missing upstream_path reports check failure" 1 "upstream check could not run"
 
+# --- fork branch: diff from the pin must equal the committed upstream.patch ------
+
+make_fork() { # make_fork <sha>: forked-skill is upstream's myfork/ plus local changes, no patch yet
+  local d="$FIX/skills/forked-skill"
+  rm -rf "$d"
+  cp -R "$UP/myfork" "$d"
+  printf '\nCredit: upstream author.\n' >> "$d/SKILL.md"   # a changed file
+  rm "$d/README.md"                                         # a file only upstream has
+  printf 'local notes\n' > "$d/NOTES.md"                    # a file only the fork has
+  touch "$d/LICENSE.upstream"
+  {
+    printf 'origin: fork\n'
+    printf 'upstream_repo: file://%s\n' "$UP"
+    printf 'upstream_sha: %s\n' "$1"
+    printf 'upstream_path: myfork\n'
+    printf 'modifications:\n  - credit line, README dropped, NOTES added\n'
+  } > "$d/PROVENANCE.yaml"
+}
+
+write_patch() { # write_patch: commit the fork's current diff as its upstream.patch
+  "$FIX/scripts/diff-upstream.sh" forked-skill > "$TMP/patch" 2> /dev/null || true
+  mv "$TMP/patch" "$FIX/skills/forked-skill/upstream.patch"
+}
+
+reset_fixture
+setup_upstream
+make_fork "$UPSHA"
+write_patch
+check_validate "fork matching its upstream.patch passes" 0 "OK: 1 skill"
+
+if grep -qF "$TMP" "$FIX/skills/forked-skill/upstream.patch" \
+   || grep -qE '^(---|\+\+\+) .*'$'\t' "$FIX/skills/forked-skill/upstream.patch"; then
+  t_fail "upstream.patch carries a temp path or a timestamp"
+else
+  t_pass "upstream.patch carries no temp path or timestamp"
+fi
+for want in 'Only in upstream: README.md' 'Only in local: NOTES.md' '+Credit: upstream author.' 'diff --git a/upstream/SKILL.md b/local/SKILL.md'; do
+  if grep -qF -- "$want" "$FIX/skills/forked-skill/upstream.patch"; then
+    t_pass "upstream.patch records: $want"
+  else
+    t_fail "upstream.patch is missing: $want"
+  fi
+done
+
+rc=0
+"$FIX/scripts/diff-upstream.sh" forked-skill > "$TMP/patch2" 2> /dev/null || rc=$?
+if [ "$rc" -eq 1 ] && cmp -s "$TMP/patch2" "$FIX/skills/forked-skill/upstream.patch"; then
+  t_pass "a second diff-upstream.sh run prints the same patch"
+else
+  t_fail "a second diff-upstream.sh run differs from the first (exit $rc)"
+fi
+
+reset_fixture
+setup_upstream
+make_fork "$UPSHA"
+write_patch
+echo "accidental edit" >> "$FIX/skills/forked-skill/SKILL.md"
+check_validate "fork with an edit outside upstream.patch fails" 1 "no longer matches upstream.patch"
+
+reset_fixture
+setup_upstream
+make_fork "$UPSHA"
+write_patch
+echo "print('changed')" > "$FIX/skills/forked-skill/scripts/tool.py"
+check_validate "fork with an edit to an untouched upstream file fails" 1 "no longer matches upstream.patch"
+
+reset_fixture
+setup_upstream
+make_fork "$UPSHA"
+write_patch
+echo "new" > "$FIX/skills/forked-skill/EXTRA.md"
+check_validate "fork with a new file outside upstream.patch fails" 1 "no longer matches upstream.patch"
+
+reset_fixture
+setup_upstream
+make_fork "$UPSHA"
+write_patch
+sed -i.bak 's/^upstream_sha: .*/upstream_sha: 0000000000000000000000000000000000000000/' "$FIX/skills/forked-skill/PROVENANCE.yaml" && rm -f "$FIX/skills/forked-skill/PROVENANCE.yaml.bak"
+check_validate "fork with unfetchable SHA reports check failure, not drift" 1 "upstream check could not run"
+
 # --- diff-upstream.sh: argument and config handling ------------------------------
 
 reset_fixture
@@ -197,6 +280,9 @@ check_diff_upstream "matching vendored skill exits 0" 0 "" vendored-skill
 
 sed -i.bak '/upstream_path/d' "$FIX/skills/vendored-skill/PROVENANCE.yaml" && rm -f "$FIX/skills/vendored-skill/PROVENANCE.yaml.bak"
 check_diff_upstream "missing upstream_path is a config error" 2 "needs upstream_repo, upstream_sha, and upstream_path" vendored-skill
+
+printf 'upstream_path: no-such-dir\n' >> "$FIX/skills/vendored-skill/PROVENANCE.yaml"
+check_diff_upstream "upstream_path absent upstream is a config error, not a diff" 2 "is not a directory" vendored-skill
 
 # --- skill script self-tests (offline) --------------------------------------------
 

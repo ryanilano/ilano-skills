@@ -4,7 +4,7 @@ license: MIT (see repo LICENSE)
 metadata:
   author: Ryan Ilano
   version: "2.2"
-description: Package conversation content as one copyable markdown block for one-tap export. Use when the user wants content to paste somewhere else: a solution export, an Obsidian note, or a terminal-ready bash block.
+description: "Package conversation content as one copyable markdown block for one-tap export. Use when the user wants content to paste somewhere else: a solution export, an Obsidian note, or a terminal-ready bash block."
 ---
 
 # Copyable Markdown

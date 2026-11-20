@@ -36,7 +36,7 @@ skills/
 
 - Every skill directory has a `PROVENANCE.yaml` with `origin: original | vendored | fork | reimplemented-technique`.
 - Vendored and forked skills pin their source: `upstream_repo`, `upstream_sha`, `upstream_path`.
-- Forks also add a `LICENSE.upstream` file and a non-empty `modifications` list.
+- Forks also add a `LICENSE.upstream` file, a non-empty `modifications` list, and an `upstream.patch` holding the output of `scripts/diff-upstream.sh <skill>`. After an intended change to a fork, regenerate it: `scripts/diff-upstream.sh <skill> > skills/<skill>/upstream.patch`.
 - Run `scripts/validate.sh` before every commit.
 
 ## Editing
