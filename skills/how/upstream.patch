@@ -1,0 +1,139 @@
+Only in local: agents/openai.yaml
+diff --git a/upstream/SKILL.md b/local/SKILL.md
+index a8d8e26306a80bd4203cb6d57b23753a6d6df50d..49c4e2c87d78a1249e258cadaef5972c316dec8c 100644
+--- a/upstream/SKILL.md
++++ b/local/SKILL.md
+@@ -1,6 +1,6 @@
+ ---
+ name: how
+-description: Explain how something works in this codebase by exploring code and producing a clear architectural explanation. Optionally critique the architecture for issues.
++description: Explain how a subsystem, feature or flow in this codebase works, as an onboarding-level architectural explanation built by read-only subagents. Use for "how does X work" questions, and to critique a subsystem's architecture.
+ ---
+ 
+ # How
+@@ -10,7 +10,19 @@ Explore the codebase to answer "how does X work?" questions. Produce clear archi
+ Two modes:
+ 
+ 1. **Explain** (default) — explore the codebase and produce a clear explanation
+-2. **Critique** — explain first, then spawn multiple models to independently identify architectural issues
++2. **Critique** — explain first, then spawn independent critic subagents to identify architectural issues
++
++## Subagents
++
++Every subagent is read-only: its prompt says to read and search, never to edit, write or run anything that changes state. `Explore` and `Plan` have no Edit or Write, but they keep Bash, so read-only there rests on that prompt line. Pick each role's model by tier:
++
++| Role | Tier | Claude Code |
++|------|------|-------------|
++| Explorer | fast | `subagent_type: Explore` (no Edit or Write), `model: sonnet` |
++| Explainer (direct or synthesizer) | strong | `subagent_type: Plan` (no Edit or Write), `model: opus` |
++| Critic | strongest available | `subagent_type: Plan` (no Edit or Write), `model: fable` where offered, else `opus` |
++
++On another harness, map each tier to its nearest equivalent.
+ 
+ ## Explain Mode
+ 
+@@ -42,11 +54,7 @@ Decompose the question into 2-4 parallel exploration angles. Each angle should c
+ 
+ The right decomposition depends on the question — use your judgment. For narrow questions, 2 explorers is fine. For broad subsystems, use up to 4.
+ 
+-Spawn all explorers in a single message:
+-
+-- `subagent_type`: `generalPurpose`
+-- `model`: `gpt-5.4`
+-- `readonly`: `true`
++Spawn all explorers in a single message, with the Explorer settings from Subagents.
+ 
+ Each explorer gets the same base prompt from `references/explorer-prompt.md`, plus a specific exploration angle telling it which slice to focus on. Each explorer should:
+ - Start broad: Glob for relevant directories, Grep for key types/interfaces/class names
+@@ -61,23 +69,15 @@ Then proceed to Step 3.
+ 
+ ### Step 2b — Direct Explain (simple questions)
+ 
+-Spawn a single Task subagent that explores and explains in one pass:
++Spawn a single Task subagent, with the Explainer settings from Subagents, that explores and explains in one pass.
+ 
+-- `subagent_type`: `generalPurpose`
+-- `model`: `claude-opus-4.6`
+-- `readonly`: `true`
+-
+-This agent does its own exploration (Glob, Grep, Read) and writes the explanation directly. Read `references/explainer-prompt.md` for the communication style and output format — the agent follows the same structure, it just doesn't have explorer findings as input.
++This agent does its own exploration (Glob, Grep, Read) and writes the explanation directly. Build its prompt from `references/explainer-prompt.md`, read-only line included, for the communication style and output format — the agent follows the same structure, it just doesn't have explorer findings as input, so leave out the template's findings section and its synthesis framing.
+ 
+ Proceed to Step 4.
+ 
+ ### Step 3 — Synthesize (complex questions only)
+ 
+-Once all explorers have returned, spawn a single Task subagent to synthesize their findings into one coherent explanation:
+-
+-- `subagent_type`: `generalPurpose`
+-- `model`: `claude-opus-4.6`
+-- `readonly`: `true`
++Once all explorers have returned, spawn a single Task subagent, with the Explainer settings from Subagents, to synthesize their findings into one coherent explanation.
+ 
+ The explainer gets all explorers' findings and writes the human-facing explanation (see output format below). Read `references/explainer-prompt.md` for the full prompt template. The explainer reconciles overlapping findings, resolves contradictions, and weaves the separate slices into a unified picture.
+ 
+@@ -109,18 +109,7 @@ Run the full explain flow above (Steps 1-4). You need to understand the architec
+ 
+ ### Step 2 — Spawn Critics
+ 
+-After the explanation is complete, spawn architectural critics. Launch all in a single message:
+-
+-| Subagent | Model |
+-|----------|-------|
+-| Critic A | `claude-opus-4.6` |
+-| Critic B | `composer-2` |
+-| Critic C | `gpt-5.4` |
+-
+-For each critic:
+-- `subagent_type`: `generalPurpose`
+-- `model`: the model from the table. These are starting suggestions — escalate to a higher reasoning tier of the same model family when the architecture warrants deeper analysis.
+-- `readonly`: `true`
++After the explanation is complete, spawn three architectural critics (A, B, C) with the Critic settings from Subagents. Launch all in a single message, each in its own fresh context so their findings stay independent. Raise their reasoning effort when the architecture warrants deeper analysis.
+ 
+ Read `references/critic-prompt.md` for the prompt template. Each critic gets:
+ 1. The explanation from Step 1 (so they don't waste time re-exploring)
+@@ -138,3 +127,5 @@ Categorize findings:
+ - **Dismissed** — Wrong, missing context, or style preference
+ 
+ Present the explanation first (from Step 1), then the critique verdict below it. The explanation should stand on its own — someone who just wants to understand the system shouldn't have to wade through critique.
++
++Credit: Lauren Tan (poteto), from [poteto/how](https://github.com/poteto/how) (MIT).
+diff --git a/upstream/references/critic-prompt.md b/local/references/critic-prompt.md
+index a9dfb601c85447d7051a96d61f254e9dda3be7c3..7488c494c02b7992bbc66fa3286cfaa4545c5d74 100644
+--- a/upstream/references/critic-prompt.md
++++ b/local/references/critic-prompt.md
+@@ -6,6 +6,8 @@ Use this template to build the prompt for each critic subagent. Fill in the plac
+ 
+ You are reviewing the architecture of a codebase subsystem. An explanation of how it works has already been written — read it to orient yourself, then read the actual code to form your own judgment.
+ 
++You read only: read and search, and never edit, write, or run anything that changes state.
++
+ ## Architectural Explanation
+ 
+ {EXPLANATION}
+diff --git a/upstream/references/explainer-prompt.md b/local/references/explainer-prompt.md
+index bb5889628387cf54792aa29709da368be1c5adab..3581e63144d56c92407a45964856db2f6b080a8d 100644
+--- a/upstream/references/explainer-prompt.md
++++ b/local/references/explainer-prompt.md
+@@ -6,6 +6,8 @@ Use this template to build the prompt for the explainer subagent. Fill in the pl
+ 
+ You are writing an architectural explanation for a senior engineer. Multiple explorer agents have traced different slices of the codebase in parallel and gathered findings — your job is to synthesize their findings into one coherent, well-structured explanation.
+ 
++You read only: read and search, and never edit, write, or run anything that changes state.
++
+ ## Original Question
+ 
+ > {QUESTION}
+diff --git a/upstream/references/explorer-prompt.md b/local/references/explorer-prompt.md
+index f65a51b9bb51c0b452904fdeac19606c71362ce1..0d8105cefcaca3c5d251112bcb5de24a5c6769d5 100644
+--- a/upstream/references/explorer-prompt.md
++++ b/local/references/explorer-prompt.md
+@@ -8,6 +8,8 @@ You are exploring a codebase to understand how something works. Your job is to g
+ 
+ Other explorers are investigating different slices of the same subsystem in parallel. Don't worry about covering everything — focus on your assigned angle and go deep.
+ 
++You read only: read and search, and never edit, write, or run anything that changes state.
++
+ ## Question
+ 
+ > {QUESTION}

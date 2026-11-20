@@ -1,0 +1,5 @@
+interface:
+  display_name: "Adversarial Review"
+  short_description: "Lens-based review with an independent judgment"
+policy:
+  allow_implicit_invocation: true

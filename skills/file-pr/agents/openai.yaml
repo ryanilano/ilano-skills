@@ -1,0 +1,5 @@
+interface:
+  display_name: "File PR"
+  short_description: "Open a concise, problem-first pull request"
+policy:
+  allow_implicit_invocation: true

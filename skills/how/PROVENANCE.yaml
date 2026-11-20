@@ -1,0 +1,30 @@
+origin: fork
+author: Lauren Tan
+license: MIT
+upstream_repo: https://github.com/poteto/how
+upstream_sha: b1ef42969ea7a2bb50aa26c2480274828a0385e7
+upstream_path: skills/how
+upstream_url: https://github.com/poteto/how/blob/b1ef42969ea7a2bb50aa26c2480274828a0385e7/skills/how/SKILL.md
+fetched: 2026-11-20T19:30Z
+note: >-
+  Copy of the upstream skill directory (SKILL.md and the four prompt and
+  rubric files under references/) at the pinned commit (2026-04-14),
+  adapted from a Cursor plugin to Claude Code; scripts/diff-upstream.sh how
+  shows every local change. Answers "how does X work" questions with an
+  onboarding-level architectural explanation in five sections (Overview,
+  Key Concepts, How It Works, Where Things Live, Gotchas). Simple questions
+  go to one explainer subagent; complex ones fan out to 2 to 4 read-only
+  explorers, then one synthesizer. Critique mode explains first, then runs
+  three independent critics against a rubric and ends on a lead judgment
+  (act on, consider, noted, dismissed). Read in full on 2026-11-20 before
+  forking.
+modifications:
+  - Description rewritten as a context pointer per writing-for-agents (what it does, one trigger for explain and one for critique)
+  - New Subagents section with a role, tier and Claude Code table (explorers on sonnet with the Explore agent, no general-purpose option since it has Edit and Write, with a note that Explore and Plan keep Bash so read-only there rests on the prompt line, explainer and synthesizer on opus, critics on fable where offered else opus), replacing the hardcoded Cursor model names and subagent parameters (generalPurpose, readonly, gpt-5.4, claude-opus-4.6, composer-2) in Steps 2a, 2b, 3 and Critique Step 2
+  - Critique mode keeps three critics but runs them on one Anthropic tier in separate contexts instead of three model families; the escalation note now raises reasoning effort instead of switching model tier
+  - One read-only sentence added to the explorer, explainer and critic prompt templates, so the Subagents section's read-only claim holds
+  - Critique summary line in the mode list says independent critic subagents instead of multiple models
+  - agents/openai.yaml added (display name, short description, implicit invocation allowed), in the shape the other skills here use
+  - One credit line added at the end of SKILL.md naming Lauren Tan (poteto) and linking poteto/how, so the credit travels with the file when SKILL.md is copied on its own
+related:
+  - adversarial-review (a separate skill in this repo) is the lens-based review for diffs, plans and documents; this skill's critique mode covers a subsystem's architecture

@@ -1,0 +1,83 @@
+diff --git a/upstream/SKILL.md b/local/SKILL.md
+index 3ace16d4629f936a83a2ec359ac5dc7b0bf318c0..7f0b733a11500739624665fff089a2b7f1a03120 100644
+--- a/upstream/SKILL.md
++++ b/local/SKILL.md
+@@ -1,8 +1,8 @@
+ ---
+ name: modernize
+ description: >-
+-  For getting old prs up to date. Use when asked to rebase a pr or
+-  "modernize".
++  Rebase an aging PR and judge whether it should still land. Use when asked
++  to rebase a PR or "modernize".
+ ---
+ 
+ # Modernize
+@@ -10,18 +10,34 @@ description: >-
+ Modernize the idea, not just the branch. A clean rebase does not prove that the
+ PR still belongs in the product.
+ 
++## Host
++
++Read the PR's remote with `git remote get-url <remote>`. A GitHub remote uses
++`gh`. A Forgejo or Gitea remote uses `tea` (`tea pr <n>` for details,
++`tea pr list --state all` to search), adding `--remote <remote>` when the repo
++has several. In step 6, `<branch>` is the PR's head branch and `<head-remote>`
++is a remote for its head repository (the fork, for a cross-repository PR), both
++read from `gh pr view <n>` or `tea pr <n>`. Without `gh` or `tea`, or a login
++for that host (`gh auth status`, `tea logins list`), read the PR with plain git:
++`git fetch <remote> pull/<n>/head` works on both hosts but names neither, so the
++plain-git path is read-only: report the disposition and stop before step 6.
++
+ ## Guardrails
+ 
+-- Always check to make sure you have pulled latest origin for your branch, main
+-  branch, and any other branch related to your work before starting.
++- Before starting, fetch the latest remote state for your branch, the base
++  branch, and any other branch related to your work. Fetch only; never
++  `git pull` in the user's checkout.
+ - Treat existing worktree changes as user-owned. Use a disposable worktree when
+   the active worktree is dirty or is being used for other work.
+-- Modernizing authorizes rebasing and updating the PR branch. It does not
+-  authorize merging, closing, changing the base branch, or expanding scope.
++- Modernizing authorizes rebasing the PR branch locally; the push is gated
++  below. It does not authorize merging, closing, changing the base branch, or
++  expanding scope.
++- Pushing stays the user's call. Before any push, state the exact push command
++  and wait for a yes, unless the user already said to push in this request.
+ - Never use an unqualified force push. Update a rebased branch with
+   `--force-with-lease` against the head SHA observed before the rebase.
+-- Do not post a PR comment unless the user asked for one. Use the
+-  `leaving-pr-comments` skill for every comment posted on the user's behalf.
++- Do not post a PR comment unless the user asked for one. If a PR comment
++  skill is available, use it for every comment posted on the user's behalf.
+ 
+ ## Establish the PR's intent
+ 
+@@ -58,7 +74,8 @@ Do not describe a PR as current merely because Git reports no conflicts.
+ Use one of these recommendations:
+ 
+ - **MODERNIZE**: the goal is still useful and the implementation remains the
+-  right shape. Rebase, resolve conflicts, test, and update the branch.
++  right shape. Rebase, resolve conflicts, test, and update the branch once the
++  push is cleared under Guardrails.
+ - **REWORK**: the goal is still useful, but a mechanical rebase would preserve
+   the wrong implementation. Explain the smallest credible rewrite and stop
+   before pushing unless the user also asked for that rework.
+@@ -83,7 +100,9 @@ For a `MODERNIZE` disposition:
+    and no already-landed behavior was reintroduced.
+ 5. Run the repository's focused checks for the touched area. Distinguish real
+    failures from pre-existing or infrastructure failures.
+-6. Push with `--force-with-lease` tied to the previously observed remote head.
++6. Push with `--force-with-lease` tied to the previously observed remote head,
++   once the push is cleared under Guardrails:
++   `git push --force-with-lease=<branch>:<observed-sha> <head-remote> HEAD:<branch>`.
+    If the lease fails, fetch and reassess rather than overwriting new work.
+ 
+ Do not merge the PR.
+@@ -100,3 +119,5 @@ Lead with `MODERNIZE`, `REWORK`, or `CLOSE` and the reason. Then summarize:
+ 
+ Separate observed facts from judgment. Say what could not be verified instead
+ of manufacturing confidence.
++
++Credit: Theo Browne, from [t3dotgg/tstack](https://github.com/t3dotgg/tstack) (MIT).

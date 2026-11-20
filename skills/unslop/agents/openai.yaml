@@ -1,0 +1,5 @@
+interface:
+  display_name: "Unslop"
+  short_description: "Report AI writing patterns in prose"
+policy:
+  allow_implicit_invocation: false

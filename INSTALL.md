@@ -92,35 +92,6 @@ codex plugin marketplace remove ilano-skills
 </details>
 
 <details>
-<summary><strong>Kimi Code CLI</strong></summary>
-
-Plugins install from inside a Kimi Code session with slash commands.
-
-### Install
-
-```text
-/plugins install https://github.com/ryanilano/ilano-skills
-/reload
-```
-
-Invoke a skill explicitly with `/skill:<skill>`, for example `/skill:docs-mirror`.
-
-### Verify
-
-```text
-/plugins list
-```
-
-### Uninstall
-
-```text
-/plugins remove ilano
-/reload
-```
-
-</details>
-
-<details>
 <summary><strong>Qwen Code</strong></summary>
 
 ### Install

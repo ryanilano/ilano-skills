@@ -8,8 +8,8 @@
     {
       "name": "ilano",
       "source": "./",
-      "description": "Agent skills by Ryan Ilano: copyable-markdown, prompt-pack, docs-mirror, yt-cc, ffmpeg, socials-mirror, spamcheck, cherrypicker, deltamaxx, plus pinned forks of other authors' skills (humanizer, writing-fragments, writing-beats, writing-shape). writing-for-agents now comes from Matt Pocock's mattpocock-skills plugin.",
-      "version": "0.5.3"
+      "description": "Agent skills by Ryan Ilano: copyable-markdown, prompt-pack, docs-mirror, yt-cc, ffmpeg, socials-mirror, spamcheck, cherrypicker, deltamaxx, plus pinned forks of other authors' skills (humanizer, writing-fragments, writing-beats, writing-shape, unslop, adversarial-review, how, modernize, file-pr). writing-for-agents now comes from Matt Pocock's mattpocock-skills plugin.",
+      "version": "0.6.0"
     }
   ]
 }

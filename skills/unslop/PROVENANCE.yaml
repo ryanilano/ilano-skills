@@ -1,0 +1,21 @@
+origin: fork
+author: Lauren Tan
+license: MIT
+upstream_repo: https://github.com/poteto/noodle
+upstream_sha: 82d2921c52370f23f29086de81ccfb600939c037
+upstream_path: .agents/skills/unslop
+upstream_url: https://github.com/poteto/noodle/blob/82d2921c52370f23f29086de81ccfb600939c037/.agents/skills/unslop/SKILL.md
+fetched: 2026-11-20T19:30Z
+note: >-
+  Lauren Tan's (poteto) unslop from her noodle repo: 25 AI-writing patterns in five groups, plus an
+  "adding soul" pass. Read in full on 2026-11-20. The upstream body is unchanged; a patch block above
+  it sets report mode as the default so the skill never rewrites the user's own writing, and the skill
+  is typed only because its upstream triggers ("humanize", "de-AI this text") collide with humanizer.
+modifications:
+  - Typed only (disable-model-invocation true) with a short quoted description; upstream triggers overlap humanizer
+  - A patch block above the body - report mode by default (pattern number, name, line; no rewrites unless asked), edit mode only on text known to be agent-written and not edited by the user since, unknown authorship treated as the user's
+  - Pattern 13 em dash exception for code, flags, filenames, URLs, ranges and quoted material
+  - A credit line at the end of SKILL.md naming Lauren Tan
+  - A new agents/openai.yaml in the shape the other skills here use
+related:
+  - humanizer is the fuller prose editor with its own review-only mode; run one or the other on a draft

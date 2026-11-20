@@ -1,0 +1,38 @@
+Only in local: agents/openai.yaml
+diff --git a/upstream/SKILL.md b/local/SKILL.md
+index 31dc63dbafda4800b1009d83e9b23e6dd598ccde..59197d85ae044bd4664eccc34ba409211d4d4e38 100644
+--- a/upstream/SKILL.md
++++ b/local/SKILL.md
+@@ -1,11 +1,20 @@
+ ---
+ name: unslop
+-description: >-
+-  Remove AI writing patterns from prose. Use for docs, READMEs, blog posts, any non-code
+-  text that should sound human. Triggers: "unslop", "humanize", "make this sound human",
+-  "clean up this writing", "edit for voice", "de-AI this text".
++description: "Report AI writing patterns in prose (25 patterns plus voice). Typed only, /unslop."
++disable-model-invocation: true
+ ---
+ 
++## Mode: whose text it is decides
++
++This block wins where the text below differs.
++
++- **Report mode is the default.** List each pattern found by its number and name, with the line, and
++  change nothing. Add a replacement sentence only when the user asks for one.
++- **Edit mode** (Process steps 2 to 4, including "Adding soul") runs only on text an agent wrote and the
++  user has not edited since, or text the user says is agent-written. If unsure, report mode.
++- The user's own drafts are always report mode.
++- Pattern 13: em dashes in code, flags, filenames, URLs, ranges and quoted material stay.
++
+ # Unslop
+ 
+ Edit text to remove AI patterns and add human voice.
+@@ -69,3 +78,7 @@ Removing patterns is half the job. Sterile, voiceless writing is just as obvious
+ 23. **Filler phrases** — "In order to" → "To". "Due to the fact that" → "Because". "It is important to note that" → delete.
+ 24. **Excessive hedging** — "could potentially possibly be argued that it might" → "may".
+ 25. **Generic conclusions** — "The future looks bright." State specific plans or facts.
++
++---
++
++From Lauren Tan's (poteto) unslop skill in [poteto/noodle](https://github.com/poteto/noodle), MIT.
