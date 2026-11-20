@@ -50,7 +50,7 @@ Without a sample, take the voice from the kind of text. Blog posts, essays, opin
 
 **Pasted text (default).** Return the draft, a short list of remaining patterns, and the final rewrite.
 
-**Review only.** When the user asks for a review of their own draft, run step 1 only: list each tell with its line reference and pattern number, strongest first, and leave the text unchanged, even in a file. Rewrite only when they ask.
+**Review only.** When the user asks for a review, a check, or a list of tells (not a rewrite), run step 1 only: list each tell with its line reference and pattern number, strongest first. Change nothing, even in a file, until they ask for a rewrite. When both this mode and file mode could apply, this mode wins.
 
 **File mode.** When the user names a file, first read the whole current file from disk, even if you wrote it in this session. Read long files in chunks until every section has been covered. Run the full process but write only the final text to the file. Change prose only. Keep code blocks, inline code, commands, paths, YAML metadata, data, and link targets unchanged. Then give the user a short summary stating how many sections you reviewed and identifying any you could not cover. A partial pass must be reported as partial.
 

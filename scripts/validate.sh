@@ -2,7 +2,8 @@
 # Validate structure and provenance rules for every skill under skills/.
 #   - every skill has SKILL.md whose frontmatter name matches the directory name
 #   - every skill has PROVENANCE.yaml with a known origin
-#   - origin: fork    -> LICENSE.upstream present, modifications list non-empty
+#   - origin: fork    -> LICENSE.upstream present, modifications list non-empty,
+#                        and scripts/diff-upstream.sh output equals upstream.patch
 #   - origin: vendored -> content matches upstream at the pinned SHA
 #   - origin: reimplemented-technique -> original code, credited technique; no upstream to diff
 # Status to stderr; JSON summary to stdout. Exits non-zero on any failure.
@@ -11,10 +12,18 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 checked=0
 failures=0
+diff_out="$(mktemp)"
+trap 'rm -f "$diff_out"' EXIT
 
 fail() {
   echo "FAIL: $1" >&2
   failures=$((failures + 1))
+}
+
+upstream_check_failed() { # upstream_check_failed <skill> <exit code> <stderr of diff-upstream.sh>
+  local errline
+  errline="$(printf '%s\n' "$3" | grep -m 1 '^error:' || true)"
+  fail "$1: upstream check could not run (exit $2): ${errline:-run scripts/diff-upstream.sh $1 for details}"
 }
 
 yaml_get() { # yaml_get <file> <key> — first value of a top-level flat key
@@ -59,6 +68,22 @@ for dir in "$ROOT"/skills/*/; do
       if [ "$(mods_count "$prov")" -eq 0 ]; then
         fail "$skill: origin is fork but modifications list is empty"
       fi
+      # The committed upstream.patch is the expected diff from the pin, so an
+      # edit that is not in it (or a patch nobody regenerated) fails here.
+      regen="scripts/diff-upstream.sh $skill > skills/$skill/upstream.patch"
+      if [ ! -f "$dir/upstream.patch" ]; then
+        fail "$skill: origin is fork but upstream.patch is missing; create it with: $regen"
+      else
+        echo "checking $skill against upstream at pinned SHA plus upstream.patch..." >&2
+        rc=0
+        diff_err="$("$ROOT/scripts/diff-upstream.sh" "$skill" 2>&1 > "$diff_out")" || rc=$?
+        if [ "$rc" -gt 1 ]; then
+          upstream_check_failed "$skill" "$rc" "$diff_err"
+        elif ! cmp -s "$diff_out" "$dir/upstream.patch"; then
+          fail "$skill: origin is fork but its diff from upstream no longer matches upstream.patch; if the change is intended, run: $regen"
+          diff -u "$dir/upstream.patch" "$diff_out" | head -n 40 >&2 || true
+        fi
+      fi
       ;;
     vendored)
       echo "checking $skill against upstream at pinned SHA..." >&2
@@ -67,8 +92,7 @@ for dir in "$ROOT"/skills/*/; do
       if [ "$rc" -eq 1 ]; then
         fail "$skill: origin is vendored but content differs from upstream at pinned SHA"
       elif [ "$rc" -ne 0 ]; then
-        errline="$(printf '%s\n' "$diff_err" | grep -m 1 '^error:' || true)"
-        fail "$skill: upstream check could not run (exit $rc): ${errline:-run scripts/diff-upstream.sh $skill for details}"
+        upstream_check_failed "$skill" "$rc" "$diff_err"
       fi
       ;;
     "")

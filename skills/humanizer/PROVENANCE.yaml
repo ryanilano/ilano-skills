@@ -20,6 +20,6 @@ note: >-
   knows to be true where the text is generic. LICENSE.upstream duplicates the
   upstream LICENSE so the credit survives if the copy is ever trimmed.
 modifications:
-  - SKILL.md "What to return" gains a "Review only" mode, placed before file mode. When the user asks for a review of their own draft, the skill lists each tell with its line reference and pattern number and leaves the text unchanged, in a file or pasted, until the user asks for a rewrite. Without it, file mode rewrites the draft in place.
+  - SKILL.md "What to return" gains a "Review only" mode, placed before file mode. When the user asks for a review, a check, or a list of tells rather than a rewrite, of any text, the skill lists each tell with its line reference and pattern number and leaves the text unchanged, in a file or pasted, until the user asks for a rewrite. It wins over file mode when both could apply. Without it, file mode rewrites the file in place.
 related:
   - writing-fragments, writing-beats, writing-shape (Matt Pocock, forked here with a credit line) build the article; humanizer edits the result

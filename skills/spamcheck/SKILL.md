@@ -1,6 +1,6 @@
 ---
 name: spamcheck
-description: "Audit one email or text message: broken opt-out, scam signs, and which law and agency apply (CAN-SPAM, TCPA, FTC, FCC, FEC, state AG). Use when an unsubscribe fails or is ignored, texts continue after STOP, a message looks like a scam, a complaint needs evidence, or an unsubscribe click or STOP reply should be logged."
+description: "Audit one email or text message: broken opt-out, scam signs, and which law and agency apply (CAN-SPAM, TCPA, FTC, FCC, FEC, state AG or the sending platform). Use when an unsubscribe fails or is ignored, texts continue after STOP, a message looks like a scam, a complaint needs evidence, or an unsubscribe click or STOP reply should be logged."
 ---
 
 # spamcheck
