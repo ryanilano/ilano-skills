@@ -1,0 +1,28 @@
+origin: fork
+author: Theo Browne
+license: MIT
+upstream_repo: https://github.com/t3dotgg/tstack
+upstream_sha: 11e37a74d0a6868c121cd0910ab2b3bd9873b92a
+upstream_path: skills/modernize
+upstream_url: https://github.com/t3dotgg/tstack/blob/11e37a74d0a6868c121cd0910ab2b3bd9873b92a/skills/modernize/SKILL.md
+fetched: 2026-11-20T19:30Z
+note: >-
+  Copy of the upstream directory at the pinned commit (2026-11-11), changed
+  only as listed under modifications; scripts/diff-upstream.sh modernize
+  shows every local change. The skill rebases an aging PR and first judges
+  whether its idea still belongs in the product: it records the PR's intent,
+  inspects what changed on the base branch since the merge base, picks a
+  MODERNIZE, REWORK or CLOSE disposition, and only for MODERNIZE rebases,
+  checks the result with git range-diff, and updates the branch with
+  --force-with-lease against the observed head SHA. Read in full on
+  2026-11-20 before forking, together with the upstream skills it pointed at.
+modifications:
+  - Description rewritten as a context pointer that leads with what the skill does (rebase an aging PR and judge whether it should still land); the two triggers are kept
+  - A "Host" section reads the PR's remote and uses gh on GitHub, tea on Forgejo or Gitea (tea pr, tea pr list --state all, --remote), and git fetch <remote> pull/<n>/head as the plain-git fallback that works on both hosts; tea flags checked against tea 0.16.0 --help
+  - The authorization guardrail now says modernizing authorizes updating the PR branch only, and a new guardrail makes pushing the user's call: the agent states the exact push command and waits for a yes unless the user already said to push in this request
+  - Step 6 names the push command (git push --force-with-lease=<branch>:<observed-sha> <head-remote> HEAD:<branch>) and ties it to that guardrail
+  - The dependency on the upstream leaving-pr-comments skill, which this repo does not ship, is replaced with "if a PR comment skill is available, use it"
+  - One credit line added at the end of SKILL.md naming Theo Browne and linking t3dotgg/tstack
+related:
+  - file-pr is the sibling fork from the same upstream; it opens the PR this skill later brings up to date
+  - adversarial-review can review the rebased diff before the push

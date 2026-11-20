@@ -1,0 +1,29 @@
+origin: fork
+author: Theo Browne
+license: MIT
+upstream_repo: https://github.com/t3dotgg/tstack
+upstream_sha: 11e37a74d0a6868c121cd0910ab2b3bd9873b92a
+upstream_path: skills/file-pr
+upstream_url: https://github.com/t3dotgg/tstack/blob/11e37a74d0a6868c121cd0910ab2b3bd9873b92a/skills/file-pr/SKILL.md
+fetched: 2026-11-20T19:30Z
+note: >-
+  Copy of the upstream directory at the pinned commit (2026-11-11), changed
+  only as listed under modifications; scripts/diff-upstream.sh file-pr shows
+  every local change. The skill files a concise pull request: check for an
+  existing PR, review the diff against the base, write a title that says why
+  the change matters and a description that opens with the problem, check
+  for secrets, and open a real PR rather than a draft. Upstream ships no
+  agents/openai.yaml for it; the local one is new. Read in full on
+  2026-11-20 before forking, together with the upstream skills it pointed at.
+modifications:
+  - Description pruned to one trigger branch ("file or open a PR"); "create" was a synonym of the same branch
+  - The skill reads the push remote and uses gh on GitHub or tea on Forgejo or Gitea (tea logins list, tea pr list --fields index,head,url, tea pr create --head --base --title --description-file, --remote); tea flags checked against tea 0.16.0 --help
+  - The existing-PR check names the command for each host
+  - The attribution footer requirement ("Created with <model> in <harness>", plus subagent models) is removed; the description ends with the solution and carries no model, harness or session footer
+  - The real-PR-not-draft line is kept, with a note that creating the PR on the remote is the action the user asked for; the GraphQL rate-limit REST fallback is marked as GitHub only
+  - The dependencies on the upstream babysit-pr and leaving-pr-comments skills, which this repo does not ship, are replaced with "use a PR watcher, review or PR comment skill if one is available"
+  - A new agents/openai.yaml in the shape the other skills here use
+  - One credit line added at the end of SKILL.md naming Theo Browne and linking t3dotgg/tstack
+related:
+  - modernize is the sibling fork from the same upstream; it brings an aging PR up to date
+  - adversarial-review can review the diff before the PR is filed

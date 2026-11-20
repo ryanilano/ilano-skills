@@ -1,0 +1,64 @@
+diff --git a/upstream/SKILL.md b/local/SKILL.md
+index 3ace16d4629f936a83a2ec359ac5dc7b0bf318c0..8ccad302a82fa24ce0b1da3eb9bc618a568f596a 100644
+--- a/upstream/SKILL.md
++++ b/local/SKILL.md
+@@ -1,8 +1,8 @@
+ ---
+ name: modernize
+ description: >-
+-  For getting old prs up to date. Use when asked to rebase a pr or
+-  "modernize".
++  Rebase an aging PR and judge whether it should still land. Use when asked
++  to rebase a PR or "modernize".
+ ---
+ 
+ # Modernize
+@@ -10,18 +10,28 @@ description: >-
+ Modernize the idea, not just the branch. A clean rebase does not prove that the
+ PR still belongs in the product.
+ 
++## Host
++
++Read the PR's remote with `git remote get-url <remote>`. A GitHub remote uses
++`gh`. A Forgejo or Gitea remote uses `tea` (`tea pr <n>` for details,
++`tea pr list --state all` to search), adding `--remote <remote>` when the repo
++has several. Without `tea` or a login for that host (`tea logins list`), read
++the PR with plain git: `git fetch <remote> pull/<n>/head` works on both hosts.
++
+ ## Guardrails
+ 
+ - Always check to make sure you have pulled latest origin for your branch, main
+   branch, and any other branch related to your work before starting.
+ - Treat existing worktree changes as user-owned. Use a disposable worktree when
+   the active worktree is dirty or is being used for other work.
+-- Modernizing authorizes rebasing and updating the PR branch. It does not
++- Modernizing authorizes rebasing and updating the PR branch only. It does not
+   authorize merging, closing, changing the base branch, or expanding scope.
++- Pushing stays the user's call. Before any push, state the exact push command
++  and wait for a yes, unless the user already said to push in this request.
+ - Never use an unqualified force push. Update a rebased branch with
+   `--force-with-lease` against the head SHA observed before the rebase.
+-- Do not post a PR comment unless the user asked for one. Use the
+-  `leaving-pr-comments` skill for every comment posted on the user's behalf.
++- Do not post a PR comment unless the user asked for one. If a PR comment
++  skill is available, use it for every comment posted on the user's behalf.
+ 
+ ## Establish the PR's intent
+ 
+@@ -83,7 +93,9 @@ For a `MODERNIZE` disposition:
+    and no already-landed behavior was reintroduced.
+ 5. Run the repository's focused checks for the touched area. Distinguish real
+    failures from pre-existing or infrastructure failures.
+-6. Push with `--force-with-lease` tied to the previously observed remote head.
++6. Push with `--force-with-lease` tied to the previously observed remote head,
++   once the push is cleared under Guardrails:
++   `git push --force-with-lease=<branch>:<observed-sha> <head-remote> HEAD:<branch>`.
+    If the lease fails, fetch and reassess rather than overwriting new work.
+ 
+ Do not merge the PR.
+@@ -100,3 +112,5 @@ Lead with `MODERNIZE`, `REWORK`, or `CLOSE` and the reason. Then summarize:
+ 
+ Separate observed facts from judgment. Say what could not be verified instead
+ of manufacturing confidence.
++
++Credit: Theo Browne, from [t3dotgg/tstack](https://github.com/t3dotgg/tstack) (MIT).

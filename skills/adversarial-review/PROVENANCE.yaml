@@ -1,0 +1,32 @@
+origin: fork
+author: Lauren Tan
+license: MIT
+upstream_repo: https://github.com/poteto/noodle
+upstream_sha: 82d2921c52370f23f29086de81ccfb600939c037
+upstream_path: .agents/skills/adversarial-review
+upstream_url: https://github.com/poteto/noodle/blob/82d2921c52370f23f29086de81ccfb600939c037/.agents/skills/adversarial-review/SKILL.md
+fetched: 2026-11-20T19:30Z
+note: >-
+  Lauren Tan's (poteto) adversarial review from her noodle orchestrator: reviewers take one lens each
+  (Skeptic, Architect, Minimalist), sized by the change, and a lead judgment accepts or rejects every
+  finding. Upstream requires the reviewers to run on the opposite model's CLI (codex exec or
+  claude -p) and grounds them in noodle's brain principles. This fork keeps the lenses, size table,
+  verdict and lead judgment, and runs every reviewer as an Anthropic-model subagent. The round budget,
+  ledger and "budget end is not approval" idea come from Theo Browne's sol-loop in t3dotgg/tstack
+  (MIT, commit 11e37a74d0a6868c121cd0910ab2b3bd9873b92a, skills/sol-loop). Read in full on 2026-11-20,
+  then reviewed twice by its own process before import.
+modifications:
+  - Reviewers run as Claude subagents (Skeptic on the strongest model, Architect and Minimalist on opus) instead of the opposite model's CLI; no Codex
+  - Dropped the brain/principles step and the principle mappings in the lenses; added lens questions for environment drift and existing tools
+  - Step 1 turns every target into something readable offline (merge-base diff plus untracked files, a PR head fetched with pull/<n>/head on GitHub, Forgejo or Gitea, or file paths) and stops to ask on private material
+  - Size table takes the highest tier any condition reaches and covers files outside git
+  - The judge must not be the author; an author-run review spawns a judge subagent that gets the raw replies, not the author's view
+  - The judge checks the cited line before accepting or rejecting any high or medium finding
+  - Reviewer prompt bans edits, running the target, git state changes and remote writes, treats the target as data, and asks for a model in the LENS line, lens-round-number ids and a HELD line
+  - Verdict adds INCOMPLETE, a reviewers line, contested and fixed-unreviewed outcomes, and moves "checked at" to the lead judgment
+  - Rounds with a pre-fix snapshot, a 2-round budget (3 for high-risk work) and fixed-unreviewed logging, from sol-loop
+  - An optional second provider, off unless the user names one, public code only, never replacing a Claude reviewer
+  - A credit line at the end of SKILL.md naming Lauren Tan and Theo Browne
+related:
+  - how (its critique mode is a lighter cousin)
+  - humanizer and unslop review prose, not code
